@@ -206,6 +206,13 @@
             <div class="home-card-sub">播放过的歌曲会出现在这里</div>
             <div class="home-card-art"></div>
           </button>
+          <button class="home-card home-card-quick home-card-smart" data-home-tone="ai" type="button"
+            onclick="openSmartFavoritesHome()">
+            <div class="home-card-label">合并收藏夹</div>
+            <div class="home-card-title">合并收藏夹</div>
+            <div class="home-card-sub">合并各平台喜欢与自建歌单</div>
+            <div class="home-card-art"></div>
+          </button>
         </div>
 
         <div class="home-rail home-insight-rail">
@@ -1312,6 +1319,18 @@
         </div>
         <div id="mini-queue-list" class="mini-queue-list"></div>
       </div>
+      <div id="smart-ai-control-bar" class="smart-ai-control-bar" hidden aria-hidden="true" aria-label="AI 播放条件">
+        <span class="smart-ai-scope">当前歌单 · AI 推荐</span>
+        <div id="smart-ai-tags" class="smart-ai-tags" aria-label="推荐标签"></div>
+        <button id="smart-ai-analysis-status" type="button" class="smart-ai-settings" onclick="retrySmartFavoriteAnalysis()" aria-live="polite" title="重新分析当前歌单">标签分析待开始</button>
+        <div class="smart-ai-input-shell">
+          <input id="smart-ai-tag-input" type="text" maxlength="32" autocomplete="off"
+            placeholder="输入现在想听什么…" aria-label="添加音乐推荐关键词" onkeydown="addSmartAiTagFromInput(event)">
+        </div>
+        <button class="smart-ai-settings" type="button" onclick="openSmartFavoritesHome({settings:true})" title="LLM 设置" aria-label="打开 LLM 设置">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.56-1H3v-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.63 1.7 1.7 0 0 0 10 3.09V3h4v.09A1.7 1.7 0 0 0 15 4.64a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.37 9a1.7 1.7 0 0 0 1.56 1H21v4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+        </button>
+      </div>
       <div id="progress-bar">
         <div id="progress-fill"></div>
         <div id="progress-thumb" aria-hidden="true"></div>
@@ -1336,6 +1355,7 @@
               </div>
               <div id="control-artist" class="control-artist" onclick="openTrackDetailModal('artist')" title="歌手详情">
               </div>
+              <div id="control-song-tags" class="control-song-tags empty" aria-label="当前歌曲标签"></div>
             </div>
           </div>
           <button id="heart-btn" class="ctrl-btn" onclick="toggleLikeCurrent()" title="红心喜欢"><svg class="heart-svg"
@@ -1350,6 +1370,7 @@
             </svg></button>
         </div>
         <div class="control-cluster transport">
+          <button id="ai-play-mode-btn" class="ctrl-btn" onclick="toggleAiPlayMode()" title="AI 播放模式" aria-label="AI 播放模式" aria-pressed="false">AI</button>
           <button id="play-mode-btn" class="ctrl-btn" onclick="cyclePlayMode()" title="播放顺序"><svg id="play-mode-icon"
               width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M17 2l4 4-4 4" />
@@ -1810,6 +1831,42 @@
         <div id="track-detail-body"></div>
         <div class="btn-row">
           <button class="modal-btn" onclick="closeTrackDetailModal()">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="smart-favorites-modal" class="modal-mask" aria-hidden="true">
+      <div class="modal smart-favorites-modal" role="dialog" aria-modal="true" aria-labelledby="smart-favorites-heading">
+        <div class="smart-favorites-head">
+          <div>
+            <h2 id="smart-favorites-heading">合并收藏夹</h2>
+            <p>选择多个平台歌单，Mineradio 会在本地合并、去重并缓存标签。</p>
+          </div>
+          <button class="smart-favorites-close" type="button" onclick="closeSmartFavoritesModal()" aria-label="关闭">×</button>
+        </div>
+        <label class="merged-playlist-name">收藏夹名称<input id="merged-playlist-name" maxlength="80" placeholder="例如：通勤精选"></label>
+        <div id="smart-favorites-summary" class="smart-favorites-summary">0 个来源 · 0 首去重歌曲</div>
+        <div class="smart-favorites-section-title"><strong>歌单来源</strong><span>喜欢与收藏歌单优先显示</span></div>
+        <div id="smart-favorites-source-list" class="smart-favorites-source-list"></div>
+        <details id="smart-favorites-llm-settings" class="smart-favorites-llm-settings">
+          <summary><span>LLM 标签分析</span><small id="smart-favorites-llm-status">正在读取配置…</small></summary>
+          <div class="smart-favorites-llm-fields">
+            <label><span>API Key</span><input id="smart-favorites-api-key" type="password" autocomplete="new-password" spellcheck="false" placeholder="仅发送到本机安全存储"></label>
+            <label><span>Base URL</span><input id="smart-favorites-base-url" type="url" autocomplete="off" spellcheck="false" placeholder="OpenAI-compatible /v1 地址"></label>
+            <label><span>模型</span><input id="smart-favorites-model" type="text" autocomplete="off" spellcheck="false" placeholder="模型名称"></label>
+          </div>
+          <div class="smart-favorites-llm-note">Key 使用 Windows 系统安全存储加密；不会返回 Renderer、写入 localStorage 或输出到日志。</div>
+          <div class="smart-favorites-llm-actions">
+            <button class="modal-btn" type="button" onclick="clearSmartFavoritesLlmKey()">移除 Key</button>
+            <button id="smart-favorites-llm-test" class="modal-btn" type="button" onclick="testSmartFavoritesLlmResponse()">单独测试响应</button>
+            <button class="modal-btn primary" type="button" onclick="saveSmartFavoritesLlmSettings()">安全保存</button>
+          </div>
+        </details>
+        <div id="smart-favorites-status" class="smart-favorites-status" role="status" aria-live="polite"></div>
+        <div class="btn-row smart-favorites-actions">
+          <button class="modal-btn" type="button" onclick="closeSmartFavoritesModal()">取消</button>
+          <button id="smart-favorites-sync" class="modal-btn" type="button" onclick="createMergedFavorites()">建立合并收藏夹</button>
+          <button hidden id="smart-favorites-play" class="modal-btn primary" type="button" onclick="playSmartFavorites()">播放合并收藏夹</button>
         </div>
       </div>
     </div>

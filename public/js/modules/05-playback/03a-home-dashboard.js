@@ -60,6 +60,7 @@ function homeDashboardGeneratedCover(title, label, tone) {
     playlist: ['#9db8cf', '#00f5d4', '#2442ff'],
     library: ['#00f5d4', '#f8f4ee', '#2442ff'],
     mix: ['#f8f4ee', '#00f5d4', '#2442ff'],
+    ai: ['#b8a8ff', '#00f5d4', '#2442ff'],
   };
   var palette = palettes[tone] || palettes.playlist;
   var letters = homeDashboardSvgText(homeDashboardCoverInitials(title || label));
@@ -578,6 +579,17 @@ function renderHomeDashboardQuickCards() {
       action: 'playHomeRecent()',
       tone: 'playlist',
       className: 'home-card-quick',
+    },
+    {
+      label: '合并收藏夹',
+      title: '合并收藏夹',
+      sub: smartFavoritesState && smartFavoritesState.tracks.length
+        ? (smartFavoritesState.tracks.length + ' 首去重歌曲 · ' + smartFavoritesState.sources.length + ' 个来源')
+        : '合并各平台喜欢与自建歌单',
+      cover: smartFavoritesState && smartFavoritesState.tracks[0] ? homeDashboardSongCover(smartFavoritesState.tracks[0], 260) : '',
+      action: 'openSmartFavoritesHome()',
+      tone: 'ai',
+      className: 'home-card-quick home-card-smart',
     },
   ];
   var fingerprint = cards.map(function (card) {

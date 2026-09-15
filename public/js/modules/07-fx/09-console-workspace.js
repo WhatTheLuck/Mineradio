@@ -23,7 +23,7 @@ var FX_CONSOLE_LAYOUT = [
     key: 'home',
     groups: [
       { key: 'presets', title: '视觉预设', hint: '先选整体风格，再进入细节调整', open: true, items: [
-        fxConsoleItem('preset-grid', '视觉预设', '风格 场景 Emily 安魂 音域 星河 唱片 星球 滚筒 虚空 月蚀圣环 雨幕霓虹 折光蝶群 深海绽放 Eclipse Halo Neon Drizzle Prism Flock Abyssal Bloom')
+        fxConsoleItem('preset-grid', '视觉预设', '风格 场景 Emily 安魂 EmoMusic Face Mesh 音域 星河 唱片 星球 滚筒 虚空 月蚀圣环 雨幕霓虹 折光蝶群 深海绽放 赛博丝带 星际磁流体 CyberRibbon SpaceVenom Eclipse Halo Neon Drizzle Prism Flock Abyssal Bloom')
       ] },
       { key: 'archives', title: '用户存档', hint: '保存、应用和分享整套视觉参数', items: [
         fxConsoleItem('user-archive-grid', '用户存档', '方案 快照 预设码 应用 回退')
@@ -132,6 +132,15 @@ var FX_CONSOLE_LAYOUT = [
         fxConsoleItem('fx-coverres', '封面清晰度', '粒子数量 分辨率'),
         fxConsoleItem('fx-cineshake', '电影镜头', '镜头晃动 强度'),
         fxConsoleItem('t-cinema', '电影镜头开关', '动态镜头')
+      ] },
+      { key: 'cyber-ribbon', title: '赛博丝带', hint: '丝带预设、运动、材质与音频响应', items: [
+        fxConsoleItem('external-cyber-controls', '赛博丝带参数', 'CyberRibbon 丝带 彩带 预设 参数', false)
+      ] },
+      { key: 'space-fluid', title: '星际磁流体', hint: '磁流体、星域、音频映射与画布', items: [
+        fxConsoleItem('external-space-controls', '星际磁流体参数', 'SpaceVenom 磁流体 星空 低频 参数', false)
+      ] },
+      { key: 'emomusic', title: 'EmoMusic 情绪场', hint: '显示模式、彩带、涟漪、激光、星河与实时数据', items: [
+        fxConsoleItem('external-emomusic-controls', 'EmoMusic 参数', '情绪向量 情感曲线 雷达图 粒子 网格 平面 激光 星河 预设', false)
       ] },
       { key: 'particles', title: '粒子与光影', hint: '粒子尺寸、运动、扭曲和溢光', items: [
         fxConsoleItem('t-float', '浮空粒子层', '漂浮粒子'),

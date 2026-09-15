@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><style>html,body{margin:0;overflow:hidden;background:#000}#webgl-root{position:fixed;inset:0}#controls,#fps{display:none}</style><div id="webgl-root"></div><div id="controls"></div><span id="fps"></span>  <script>
+    window.__audioListeners = [];
+    window.wallpaperRegisterAudioListener = function (listener) { window.__audioListeners.push(listener); };
+    window.WE_Props = {
+      speed: 1.0, sensitivity: 2.5, amplitude: 1.0, bloom: 1.4,
+      density: 200, idle_motion: 0.6, symmetry: true
+    };
+  </script>
+  <script src="ref/mesh/lib/three.min.js"></script>
+  <script src="ref/ribbon/lib/OrbitControls.js"></script>
+  <script src="ref/ribbon/lib/SimplexNoise.js"></script>
+  <script src="ref/ribbon/lib/seedrandom.js"></script>
+  <script src="ref/mesh/lib/CopyShader.js"></script>
+  <script src="ref/mesh/lib/LuminosityHighPassShader.js"></script>
+  <script src="ref/mesh/lib/Pass.js"></script>
+  <script src="ref/mesh/lib/MaskPass.js"></script>
+  <script src="ref/mesh/lib/ShaderPass.js"></script>
+  <script src="ref/mesh/lib/RenderPass.js"></script>
+  <script src="ref/mesh/lib/UnrealBloomPass.js"></script>
+  <script src="ref/mesh/lib/EffectComposer.js"></script>
+  <script src="ref/ribbon/js/SpaceShader.js"></script>
+  <script src="ref/ribbon/js/CustomRGBShiftShader.js"></script>
+  <script src="ref/ribbon/js/TiltShiftShader.js"></script>
+  <script src="ref/ribbon/js/SuperShader.js"></script>
+  <script src="ref/ribbon/js/StarShader.js"></script>
+  <script src="ref/ribbon/js/CustomStarShader.js"></script>
+  <script src="ref/ribbon/js/NoiseShader.js"></script>
+  <script src="ref/mesh/src/audio.js"></script>
+  <script src="ref/mesh/src/scene.js"></script>
+  <script src="ref/mesh/src/terrain.js"></script>
+  <script src="ref/mesh/src/postfx.js"></script>
+  <script src="ribbon-merged.js"></script>
+  <script src="controls.js"></script>
+
+  <script src="app.js"></script>
+<script src="../cyber-bridge.js"></script>

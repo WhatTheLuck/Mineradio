@@ -481,11 +481,11 @@ function animate() {
       return prev + (next - prev) * k;
     }
     // smoothBass 主要由 kick 驱动 (不被人声干扰)
-    smoothBass = env(smoothBass, Math.min(0.82, rb * 0.78 + re * 0.025), 0.28, 0.075);
+    smoothBass = env(smoothBass, Math.min(0.82, rb * 0.78 + re * 0.025), 0.42, 0.085);
     // smoothMid 用 中高乐器, 不再混入人声
-    smoothMid = env(smoothMid, Math.min(0.68, rm * 0.64 + re * 0.025), 0.18, 0.060);
-    smoothTreb = env(smoothTreb, Math.min(0.56, rt * 0.54), 0.18, 0.055);
-    smoothEnergy = env(smoothEnergy, Math.min(0.72, re), 0.16, 0.055);
+    smoothMid = env(smoothMid, Math.min(0.68, rm * 0.64 + re * 0.025), 0.34, 0.070);
+    smoothTreb = env(smoothTreb, Math.min(0.56, rt * 0.54), 0.34, 0.065);
+    smoothEnergy = env(smoothEnergy, Math.min(0.72, re), 0.30, 0.065);
     var cinemaProfileSample = { energy: re, low: rb, vocal: voc, melody: rm, lowOnset: bassOnset, energyOnset: energyOnset };
     if (sonicAudioFrame && sonicAudioFrame.sonicDetailed) {
       var sonicLowDrive = clamp01((Number(sonicAudioFrame.subBass) || 0) * 0.58
@@ -623,13 +623,19 @@ function animate() {
   // v7.2 旋转 = 头部+眼球追踪 + 鼠标/手势拖动 + 惯性
   tickGestureRotation(dt);
   var skullPresetActive = fx && fx.preset === SKULL_PRESET_INDEX;
+  var emomusicPresetActive = fx && Number(fx.preset) === 15;
+  var emomusicGalaxyState = window.MineradioEmoMusic && typeof MineradioEmoMusic.galaxyState === 'function' ? MineradioEmoMusic.galaxyState(fx) : { active: false, strength: 1 };
+  var emomusicGalaxyActive = !!(emomusicPresetActive && emomusicGalaxyState.active);
+  var externalPresetActive = fx && (Number(fx.preset) === CYBER_RIBBON_PRESET_INDEX || Number(fx.preset) === SPACE_VENOM_PRESET_INDEX || emomusicPresetActive);
   var workshopPresetActive = window.MineradioSonicWorkshop && MineradioSonicWorkshop.isActive(fx);
   var presetUsesStarRiverParticles = fx && (Number(fx.preset) === 5 || (typeof SONIC_PRESET_INDEX !== 'undefined' && Number(fx.preset) === SONIC_PRESET_INDEX));
   var presetStarRiverMuted = presetUsesStarRiverParticles && fx.backgroundStarRiver === false;
-  particles.visible = !skullPresetActive && !workshopPresetActive && !presetStarRiverMuted;
-  if (bloomParticles) bloomParticles.visible = !skullPresetActive && !workshopPresetActive && !presetStarRiverMuted && fx.bloom && fx.bloomStrength > 0.01;
-  if (floatGroup) floatGroup.visible = !skullPresetActive && !workshopPresetActive;
-  if (backCoverGroup) backCoverGroup.visible = !skullPresetActive && !workshopPresetActive;
+  if (uniforms && uniforms.uPreset) uniforms.uPreset.value = emomusicGalaxyActive ? 5 : fx.preset;
+  if (uniforms && uniforms.uPointScale) uniforms.uPointScale.value = emomusicGalaxyActive ? fx.point * Math.max(.5, Number(emomusicGalaxyState.strength) || 1) : fx.point;
+  particles.visible = emomusicGalaxyActive || (!skullPresetActive && !workshopPresetActive && !externalPresetActive && !presetStarRiverMuted);
+  if (bloomParticles) bloomParticles.visible = (emomusicGalaxyActive || (!skullPresetActive && !workshopPresetActive && !externalPresetActive && !presetStarRiverMuted)) && fx.bloom && fx.bloomStrength > 0.01;
+  if (floatGroup) floatGroup.visible = !skullPresetActive && !workshopPresetActive && !externalPresetActive;
+  if (backCoverGroup) backCoverGroup.visible = !skullPresetActive && !workshopPresetActive && !externalPresetActive;
   var targetRotY = orbit.centerLocked ? 0 : (headParallax.active ? headParallax.x * 0.5 : 0) + gestureRotation.y;
   var targetRotX = orbit.centerLocked ? 0 : (headParallax.active ? -headParallax.y * 0.35 : 0) + gestureRotation.x;
   particles.rotation.y += (targetRotY - particles.rotation.y) * 0.055;
@@ -669,6 +675,32 @@ function animate() {
       fx: fx,
       time: uniforms.uTime.value,
       audio: { bass: bass, mid: mid, treble: treble, beat: beatPulse, energy: audioEnergy }
+    });
+  }
+  if (window.MineradioExternalVisuals) {
+    MineradioExternalVisuals.update(dt, {
+      scene: scene,
+      renderer: renderer,
+      fx: fx,
+      time: uniforms.uTime.value,
+      playing: !!(playing && audio && !audio.paused),
+      audio: { bass: smoothBass, mid: smoothMid, treble: smoothTreb, beat: beatPulse, energy: smoothEnergy },
+      frequencyData: frequencyData,
+      sampleRate: (audioCtx && audioCtx.sampleRate) || 44100,
+      fftSize: (analyser && analyser.fftSize) || FFT_SIZE
+    });
+  }
+  if (window.MineradioEmoMusic) {
+    MineradioEmoMusic.update(dt, {
+      fx: fx,
+      time: uniforms.uTime.value,
+      playing: !!(playing && audio && !audio.paused),
+      visualRotation: particles && particles.rotation ? particles.rotation : null,
+      audio: { bass: bass, mid: mid, treble: treble, beat: beatPulse, energy: audioEnergy },
+      timeDomainData: timeDomainData,
+      frequencyData: frequencyData,
+      sampleRate: (audioCtx && audioCtx.sampleRate) || 44100,
+      fftSize: (analyser && analyser.fftSize) || FFT_SIZE
     });
   }
   if (perfProbe && perfProbe.markSince) perfProbe.markSince('visual.sonic-workshop', sonicWorkshopPerfStart);

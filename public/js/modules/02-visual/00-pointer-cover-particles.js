@@ -120,6 +120,8 @@ window.addEventListener('mousemove', function (e) {
     markRenderInteraction('canvas-drag', 900);
     unlockCenteredView();
     var dx = e.clientX - orbit.last.x, dy = e.clientY - orbit.last.y;
+    if (window.MineradioExternalVisuals) MineradioExternalVisuals.rotate(dx, dy);
+    if (window.MineradioEmoMusic) MineradioEmoMusic.rotate(dx, dy);
     if (particlePointerSpin.active) {
       var nowSpin = performance.now();
       var spinDt = Math.max(1 / 120, Math.min(0.08, (nowSpin - particlePointerSpin.lastT) / 1000 || 1 / 60));
@@ -1159,6 +1161,10 @@ scene.add(backgroundStarRiverParticles);
 
 function backgroundStarRiverTargetAlpha() {
   if (!fx || fx.backgroundStarRiver === false) return 0;
+  if (Number(fx.preset) === 15 && window.MineradioEmoMusic && typeof MineradioEmoMusic.galaxyState === 'function') {
+    var emomusicGalaxy = MineradioEmoMusic.galaxyState(fx);
+    return emomusicGalaxy.active ? 0.34 * Math.max(0.2, Number(emomusicGalaxy.strength) || 1) : 0;
+  }
   if (Number(fx.preset) === 5) return 0;
   if (typeof SONIC_PRESET_INDEX !== 'undefined' && Number(fx.preset) === SONIC_PRESET_INDEX) return 0;
   if (typeof SONIC_WORKSHOP_PRESET_INDEX !== 'undefined' && Number(fx.preset) === SONIC_WORKSHOP_PRESET_INDEX) return 0.28;

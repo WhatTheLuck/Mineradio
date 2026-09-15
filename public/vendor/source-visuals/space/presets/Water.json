@@ -1,0 +1,85 @@
+{
+  "schema": "magnetic-visualizer-settings",
+  "version": 2,
+  "name": "Water",
+  "savedAt": "2026-09-01T04:59:41.085Z",
+  "visual": {
+    "liquidColor": [
+      0.47058823529411764,
+      0.47058823529411764,
+      0.47058823529411764
+    ],
+    "liquidAlpha": 0.05,
+    "centerConcentration": 1,
+    "liquidFusion": 3,
+    "edgeSmoothness": 1,
+    "baseSpeed": 0.14,
+    "audioSpeedMultiplier": 2,
+    "sphereCount": 20,
+    "levelInputMin": 0.015,
+    "levelInputMax": 0.3,
+    "bassInputMin": 0.04,
+    "bassInputMax": 0.837,
+    "midInputMin": 0.256,
+    "midInputMax": 0.729,
+    "sphereSizeMin": 1.26,
+    "sphereSizeMax": 1.61,
+    "coreSizeMin": 0.001,
+    "coreSizeMax": 0.157,
+    "overallSizeMin": 1.04,
+    "overallSizeMax": 1.46,
+    "sphereDistanceMin": 0.56,
+    "sphereDistanceMax": 0.9,
+    "edgeColor1": [
+      1,
+      1,
+      1
+    ],
+    "edgeColor2": [
+      1,
+      1,
+      1
+    ],
+    "edgeIntensityMin": 2.44,
+    "edgeIntensityMax": 5.15,
+    "edgeWidth": 0.5,
+    "gradientRotation": 82,
+    "cameraDistance": 5,
+    "highlightColor1": [
+      1,
+      1,
+      1
+    ],
+    "highlightIntensity1": 100,
+    "highlightConcentration1": 80,
+    "horizontalAngle1": 61,
+    "verticalAngle1": 220,
+    "highlightColor2": [
+      1,
+      1,
+      1
+    ],
+    "highlightIntensity2": 100,
+    "highlightConcentration2": 60,
+    "horizontalAngle2": 220,
+    "verticalAngle2": 7,
+    "hoverAmplitude": 0.18,
+    "pointerAttractionEnabled": true,
+    "pointerAttraction": 2,
+    "pointerRadius": 1,
+    "pixelBudgetMP": 2.5,
+    "deviceScaleMax": 1.5,
+    "targetFps": 55,
+    "adaptiveResolutionMin": 0.6,
+    "angleX": 0,
+    "angleY": 0
+  },
+  "audio": {
+    "fftSize": 2048,
+    "bassFrom": 35,
+    "bassTo": 220,
+    "midFrom": 500,
+    "midTo": 2500,
+    "signalThreshold": 0.0025
+  }
+}

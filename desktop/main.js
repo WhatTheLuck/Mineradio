@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, screen, session, globalShortcut, dialog, Tray, Menu, protocol, desktopCapturer, powerMonitor } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, screen, session, globalShortcut, dialog, Tray, Menu, protocol, desktopCapturer, powerMonitor, safeStorage } = require('electron');
 const net = require('net');
 const http = require('http');
 const path = require('path');
@@ -15,6 +15,8 @@ const {
   registerLocalMusicScheme,
 } = require('./local-music-library');
 const { BuiltInPlaylistLibrary } = require('./built-in-playlist-library');
+const { VisualPresetStore } = require('./visual-preset-store');
+const { SmartFavoritesStore } = require('./smart-favorites-store');
 const { WallpaperEngineRuntime } = require('./wallpaper-engine-runtime');
 const { FullDesktopModeRuntime } = require('./full-desktop-mode-runtime');
 const {
@@ -147,6 +149,7 @@ const STARTUP_QA_USER_DATA_PATH = (() => {
 const STABLE_USER_DATA_PATH = STARTUP_QA_USER_DATA_PATH || path.join(app.getPath('appData'), APP_NAME);
 fs.mkdirSync(STABLE_USER_DATA_PATH, { recursive: true });
 app.setPath('userData', STABLE_USER_DATA_PATH);
+const smartFavoritesStore = new SmartFavoritesStore({ userDataPath: STABLE_USER_DATA_PATH, safeStorage });
 const INITIAL_CACHE_SETTINGS = ensureCacheDirectories(readCacheSettings());
 const loginEasterEggGate = new LoginEasterEggGate({
   userDataPath: STABLE_USER_DATA_PATH,
@@ -4572,6 +4575,54 @@ ipcMain.handle('mineradio-local-library-list', async (event) => {
 ipcMain.handle('mineradio-built-in-playlists-list', async (event) => {
   if (!isTrustedMainWindowIpc(event)) return { ok: false, count: 0, playlists: [], error: 'UNTRUSTED_SENDER' };
   return builtInPlaylistLibrary.listSync();
+});
+
+const visualPresetStore = new VisualPresetStore(app.isPackaged ? path.dirname(process.execPath) : app.getAppPath());
+ipcMain.handle('mineradio-visual-presets', async (event, action, kind, name, value) => {
+  if (!isTrustedMainWindowIpc(event)) return {ok:false,error:'UNTRUSTED_SENDER'};
+  try { if(action==='list') return {ok:true,items:visualPresetStore.list(kind)};
+    if(action==='read') return {ok:true,value:visualPresetStore.read(kind,name)};
+    if(action==='save') return {ok:true,...visualPresetStore.save(kind,name,value)};
+    return {ok:false,error:'INVALID_ACTION'};
+  } catch(error){return {ok:false,error:error.message};}
+});
+ipcMain.handle('mineradio-merge-playlists', async(event,name,tracks)=>{
+  if(!isTrustedMainWindowIpc(event))return {ok:false,error:'UNTRUSTED_SENDER'};
+  try{return await builtInPlaylistLibrary.createMerged(name,tracks);}catch(error){return builtInPlaylistMutationError(error);}
+});
+ipcMain.handle('mineradio-smart-favorites-read', async (event) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, state: null, error: 'UNTRUSTED_SENDER' };
+  return smartFavoritesStore.publicState();
+});
+
+ipcMain.handle('mineradio-smart-favorites-save', async (event, state) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, error: 'UNTRUSTED_SENDER' };
+  return smartFavoritesStore.saveState(state);
+});
+
+ipcMain.handle('mineradio-smart-favorites-llm-status', async (event) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, configured: false, error: 'UNTRUSTED_SENDER' };
+  return smartFavoritesStore.configStatus();
+});
+
+ipcMain.handle('mineradio-smart-favorites-llm-configure', async (event, payload) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, configured: false, error: 'UNTRUSTED_SENDER' };
+  return smartFavoritesStore.configureLlm(payload || {});
+});
+
+ipcMain.handle('mineradio-smart-favorites-llm-clear', async (event) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, configured: false, error: 'UNTRUSTED_SENDER' };
+  return smartFavoritesStore.clearLlmCredential();
+});
+
+ipcMain.handle('mineradio-smart-favorites-llm-test', async (event) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, configured: false, stage: 'security', error: 'UNTRUSTED_SENDER' };
+  return smartFavoritesStore.testLlmConnection();
+});
+
+ipcMain.handle('mineradio-smart-favorites-analyze', async (event, tracks, tags) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, available: false, results: [], error: 'UNTRUSTED_SENDER' };
+  return smartFavoritesStore.analyzeTracks(tracks, tags);
 });
 
 ipcMain.handle('mineradio-built-in-playlist-page', async (event, id, options = {}) => {

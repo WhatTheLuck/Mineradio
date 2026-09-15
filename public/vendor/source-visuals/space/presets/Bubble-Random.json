@@ -1,0 +1,90 @@
+{
+  "schema": "magnetic-visualizer-settings",
+  "version": 2,
+  "name": "Bubble-Random",
+  "savedAt": "2026-09-01T05:47:32.399Z",
+  "visual": {
+    "liquidColor": [
+      0.0392156862745098,
+      0.0392156862745098,
+      0.0392156862745098
+    ],
+    "liquidAlpha": 0.1,
+    "centerConcentration": 1,
+    "liquidFusion": 3,
+    "edgeSmoothness": 1,
+    "baseSpeed": 0.14,
+    "audioSpeedMultiplier": 2,
+    "sphereCount": 20,
+    "levelInputMin": 0.015,
+    "levelInputMax": 0.3,
+    "bassInputMin": 0.04,
+    "bassInputMax": 0.969,
+    "midInputMin": 0.136,
+    "midInputMax": 0.711,
+    "sphereSizeMin": 0.05,
+    "sphereSizeMax": 0.95,
+    "coreSizeMin": 0.001,
+    "coreSizeMax": 0.137,
+    "overallSizeMin": 1.12,
+    "overallSizeMax": 1.46,
+    "sphereDistanceMin": 0.82,
+    "sphereDistanceMax": 3,
+    "edgeColor1": [
+      0.3215686274509804,
+      0,
+      0
+    ],
+    "edgeColor2": [
+      0.2784313725490196,
+      0,
+      0
+    ],
+    "randomEdgeColorsEnabled": true,
+    "randomEdgeColorSpeed": 1,
+    "singleEdgeColorEnabled": false,
+    "autoGradientRotationEnabled": true,
+    "autoGradientRotationSpeed": 100,
+    "edgeIntensityMin": 1.58,
+    "edgeIntensityMax": 7.12,
+    "edgeWidth": 1,
+    "gradientRotation": 82,
+    "cameraDistance": 5,
+    "highlightColor1": [
+      1,
+      1,
+      1
+    ],
+    "highlightIntensity1": 10000,
+    "highlightConcentration1": 80,
+    "horizontalAngle1": 61,
+    "verticalAngle1": 220,
+    "highlightColor2": [
+      1,
+      1,
+      1
+    ],
+    "highlightIntensity2": 10000,
+    "highlightConcentration2": 60,
+    "horizontalAngle2": 220,
+    "verticalAngle2": 7,
+    "hoverAmplitude": 0.18,
+    "pointerAttractionEnabled": true,
+    "pointerAttraction": 2,
+    "pointerRadius": 1,
+    "pixelBudgetMP": 2.5,
+    "deviceScaleMax": 1.5,
+    "targetFps": 55,
+    "adaptiveResolutionMin": 0.6,
+    "angleX": 0,
+    "angleY": 0
+  },
+  "audio": {
+    "fftSize": 2048,
+    "bassFrom": 35,
+    "bassTo": 220,
+    "midFrom": 500,
+    "midTo": 2500,
+    "signalThreshold": 0.0025
+  }
+}

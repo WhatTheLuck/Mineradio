@@ -51,7 +51,7 @@
     "lyricMotionSoftness": 0.72,
     "lyricFont": "sans",
     "lyricLetterSpacing": 0,
-    "lyricLineHeight": 1,
+    "lyricLineHeight": 1.08,
     "lyricWeight": 750,
     "lyricTextureClarity": 1,
     "lyricLiveViewportFit": true,

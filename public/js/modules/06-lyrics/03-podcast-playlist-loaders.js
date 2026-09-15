@@ -157,6 +157,10 @@ async function hydratePlaylistQueueNextPage(reason) {
     state.hasMore = !!(r && r.hasMore);
     if (!rawTracks.length || state.nextOffset <= offset) state.hasMore = false;
     state.active = state.hasMore || (!!state.total && state.nextOffset < state.total);
+    if (playMode === 'ai' && typeof queueSmartFavoriteAnalysis === 'function') {
+      queueSmartFavoriteAnalysis(pageTracks);
+      if (state.active) schedulePlaylistQueueHydration(1500, 'ai-complete-playlist');
+    }
     state.pausedForBuffer = state.active;
     safeRenderQueuePanel('playlist-queue-hydrate', { animate: false, scrollCurrent: false });
     if (!state.active) {

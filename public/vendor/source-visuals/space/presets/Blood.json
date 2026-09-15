@@ -1,0 +1,85 @@
+{
+  "schema": "magnetic-visualizer-settings",
+  "version": 2,
+  "name": "Blood",
+  "savedAt": "2026-09-01T05:00:25.033Z",
+  "visual": {
+    "liquidColor": [
+      0.09803921568627451,
+      0,
+      0
+    ],
+    "liquidAlpha": 0.95,
+    "centerConcentration": 1,
+    "liquidFusion": 3,
+    "edgeSmoothness": 1,
+    "baseSpeed": 0.14,
+    "audioSpeedMultiplier": 2,
+    "sphereCount": 20,
+    "levelInputMin": 0.015,
+    "levelInputMax": 0.3,
+    "bassInputMin": 0.04,
+    "bassInputMax": 0.837,
+    "midInputMin": 0.256,
+    "midInputMax": 0.729,
+    "sphereSizeMin": 0.05,
+    "sphereSizeMax": 0.83,
+    "coreSizeMin": 0.001,
+    "coreSizeMax": 0.157,
+    "overallSizeMin": 1.12,
+    "overallSizeMax": 1.46,
+    "sphereDistanceMin": 0.82,
+    "sphereDistanceMax": 1.52,
+    "edgeColor1": [
+      0.6392156862745098,
+      0.5019607843137255,
+      0.5019607843137255
+    ],
+    "edgeColor2": [
+      1,
+      0,
+      0
+    ],
+    "edgeIntensityMin": 0.14,
+    "edgeIntensityMax": 2.44,
+    "edgeWidth": 0.5,
+    "gradientRotation": 82,
+    "cameraDistance": 5,
+    "highlightColor1": [
+      0.47058823529411764,
+      0.47058823529411764,
+      0.47058823529411764
+    ],
+    "highlightIntensity1": 1,
+    "highlightConcentration1": 80,
+    "horizontalAngle1": 61,
+    "verticalAngle1": 220,
+    "highlightColor2": [
+      0.43137254901960786,
+      0.43137254901960786,
+      0.43137254901960786
+    ],
+    "highlightIntensity2": 1,
+    "highlightConcentration2": 60,
+    "horizontalAngle2": 220,
+    "verticalAngle2": 7,
+    "hoverAmplitude": 0.18,
+    "pointerAttractionEnabled": true,
+    "pointerAttraction": 2,
+    "pointerRadius": 1,
+    "pixelBudgetMP": 2.5,
+    "deviceScaleMax": 1.5,
+    "targetFps": 55,
+    "adaptiveResolutionMin": 0.6,
+    "angleX": 0,
+    "angleY": 0
+  },
+  "audio": {
+    "fftSize": 2048,
+    "bassFrom": 35,
+    "bassTo": 220,
+    "midFrom": 500,
+    "midTo": 2500,
+    "signalThreshold": 0.0025
+  }
+}

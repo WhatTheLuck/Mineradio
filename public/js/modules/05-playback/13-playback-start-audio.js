@@ -984,6 +984,7 @@ async function playLocalQueueSong(song, idx, token, firstVisualPlay, opts, resum
 }
 
 async function playQueueAt(idx, opts) {
+  if (playMode === 'ai' && typeof queueSmartFavoriteAnalysis === 'function') queueSmartFavoriteAnalysis(playQueue);
   opts = opts || {};
   if (typeof beginSourceFallbackPlaybackInvocation === 'function' && !beginSourceFallbackPlaybackInvocation(opts)) return false;
   if (idx < 0 || idx >= playQueue.length) return false;

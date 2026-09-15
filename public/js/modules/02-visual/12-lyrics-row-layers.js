@@ -34,7 +34,10 @@ function lyricTrackLineStepWorld(mask, worldH) {
   var h = Math.max(1, Number(mask.height) || 384);
   var lineHeight = Number(mask.lineHeight) || Number(mask.fontSize) || 128;
   var step = worldH * (lineHeight / h);
-  step *= clampRange(1 + (lyricContextSpreadValue() - 1) * 0.32, 0.86, 1.45);
+  // Keep adjacent lyric rows visually distinct even when perspective compresses
+  // the track. The user control still owns the range; this only restores a
+  // readable amount of visible separation in the 3D projection.
+  step *= clampRange(1 + (lyricContextSpreadValue() - 1) * 0.44, 0.86, 1.55);
   if (lyricTranslationLayoutActive()) step *= 1.06;
   return clampRange(step, 0.22, 0.94);
 }

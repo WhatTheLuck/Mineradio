@@ -7,7 +7,7 @@ function normalizeWallpaperFps(value) {
 }
 
 var fxDefaults = {
-  preset: 0,            // 0..8 legacy series; 9=halo, 10=neon rain, 11=prism flock, 12=abyssal bloom
+  preset: 0,            // 0..8 legacy; 9..12 authored; 13=CyberRibbon; 14=SpaceVenom; 15=EmoMusic
   intensity: 0.85,
   cinemaShake: 0.5,
   depth: 0.2,
@@ -47,7 +47,7 @@ var fxDefaults = {
   lyricMotionSoftness: 0.72,
   lyricFont: 'sans',
   lyricLetterSpacing: 0,
-  lyricLineHeight: 1.0,
+  lyricLineHeight: 1.08,
   lyricWeight: 750,
   lyricTextureClarity: 1,
   lyricLiveViewportFit: true,

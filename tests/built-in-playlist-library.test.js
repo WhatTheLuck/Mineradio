@@ -43,10 +43,8 @@ test('built-in playlists persist mixed-provider songs without changing their sou
   await restored.removeTrack(id, 0);
   assert.equal(restored.page(id, { limit: 20 }).total, 4);
 
-  await assert.rejects(
-    () => restored.addTrack(id, { provider: 'spotify', spotifyId: 'blocked', id: 'blocked', name: '已移除平台' }),
-    /BUILT_IN_PLAYLIST_TRACK_INVALID/
-  );
+    const spotify = await restored.addTrack(id, { provider: 'spotify', spotifyId: 'sp1', id: 'sp1', name: '跨平台收藏', genre:['jazz'] });
+    assert.equal(spotify.ok, true);
   await restored.delete(id);
   assert.equal(restored.listSync().count, 0);
 });

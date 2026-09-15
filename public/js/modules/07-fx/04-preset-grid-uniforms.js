@@ -1,3 +1,52 @@
+var spacePresetMenuOpen = false;
+var activeSpaceSourcePreset = '';
+
+function spaceSourcePresetMenuHtml() {
+  var api = window.MineradioExternalVisuals;
+  var names = api && typeof api.sourcePresetNames === 'function' ? api.sourcePresetNames('space') : [];
+  return '<div class="space-preset-submenu' + (spacePresetMenuOpen ? ' open' : '') + '" id="space-preset-submenu" role="group" aria-label="星际磁流体预设">' + names.map(function (name, index) {
+    var active = name === activeSpaceSourcePreset;
+    return '<button type="button" class="space-preset-option' + (active ? ' active' : '') + '" data-space-source-preset="' + index + '" aria-pressed="' + active + '" onclick="applySpaceSourcePreset(event,' + index + ')"><span>' + name + '</span><small>MAGNETIC</small></button>';
+  }).join('') + '</div>';
+}
+
+function emomusicModeMenuHtml() {
+  var api = window.MineradioEmoMusic;
+  var current = api && typeof api.currentMode === 'function' ? api.currentMode() : 'particles';
+  return '<div class="emomusic-mode-submenu" role="group" aria-label="EmoMusic 面部形态">' + [
+    { id: 'particles', label: '粒子' },
+    { id: 'mesh', label: 'Mesh' },
+    { id: 'surface', label: 'Surface' }
+  ].map(function (item) {
+    var active = current === item.id;
+    return '<button type="button" class="emomusic-mode-option' + (active ? ' active' : '') + '" data-emomusic-mode="' + item.id + '" aria-pressed="' + active + '" onclick="applyEmomusicMode(event,\'' + item.id + '\')">' + item.label + '</button>';
+  }).join('') + '</div>';
+}
+
+function handlePresetCardClick(preset) {
+  if (Number(preset) === 14) spacePresetMenuOpen = !spacePresetMenuOpen;
+  else spacePresetMenuOpen = false;
+  setPreset(preset);
+  refreshPresetGrid();
+}
+
+function applySpaceSourcePreset(event, index) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  var api = window.MineradioExternalVisuals;
+  if (!api || typeof api.applySourcePreset !== 'function') return;
+  if (fx.preset !== 14) setPreset(14);
+  activeSpaceSourcePreset = api.applySourcePreset('space', index) || '';
+  spacePresetMenuOpen = true;
+  refreshPresetGrid();
+}
+
+function applyEmomusicMode(event, mode) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  if (fx.preset !== 15) setPreset(15);
+  if (window.MineradioEmoMusic && typeof MineradioEmoMusic.setMode === 'function') MineradioEmoMusic.setMode(mode);
+  refreshPresetGrid();
+}
+
 function buildPresetGrid() {
   var grid = document.getElementById('preset-grid');
   if (!grid) return;
@@ -18,11 +67,14 @@ function buildPresetGrid() {
     var cardStyle = p.premiumVisual
       ? ' style="--preset-accent:' + p.accent + ';--preset-accent-2:' + p.accent2 + '"'
       : '';
-    return '<div class="preset-card' + cardClass + '" data-preset="' + i + '"' + cardStyle + ' onclick="setPreset(' + i + ')">' +
+    var card = '<button type="button" class="preset-card' + cardClass + '" data-preset="' + i + '"' + cardStyle + ' onclick="handlePresetCardClick(' + i + ')"' + (i === 14 ? ' aria-expanded="' + spacePresetMenuOpen + '" aria-controls="space-preset-submenu"' : '') + '>' +
       '<div class="pc-icon">' + presetIcons[i] + '</div>' +
       '<div class="pc-name">' + name + '</div>' +
       '<div class="pc-desc">' + desc + '</div>' +
-      '</div>';
+      '</button>';
+    if (i === 14) return '<div class="preset-card-group space-preset-card-group">' + card + spaceSourcePresetMenuHtml() + '</div>';
+    if (i === 15) return '<div class="preset-card-group emomusic-preset-card-group">' + card + emomusicModeMenuHtml() + '</div>';
+    return card;
   }).join('');
   refreshPresetGrid();
 }
@@ -30,7 +82,31 @@ function refreshPresetGrid() {
   document.querySelectorAll('.preset-card').forEach(function (el) {
     el.classList.toggle('active', Number(el.dataset.preset) === fx.preset);
   });
+  var spaceCard = document.querySelector('.preset-card[data-preset="14"]');
+  if (spaceCard) spaceCard.setAttribute('aria-expanded', spacePresetMenuOpen ? 'true' : 'false');
+  var menu = document.getElementById('space-preset-submenu');
+  if (menu) menu.classList.toggle('open', spacePresetMenuOpen);
+  document.querySelectorAll('[data-space-source-preset]').forEach(function (button) {
+    var api = window.MineradioExternalVisuals;
+    var names = api && typeof api.sourcePresetNames === 'function' ? api.sourcePresetNames('space') : [];
+    var active = names[Number(button.dataset.spaceSourcePreset)] === activeSpaceSourcePreset;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  var emomusicMode = window.MineradioEmoMusic && typeof MineradioEmoMusic.currentMode === 'function' ? MineradioEmoMusic.currentMode() : 'particles';
+  document.querySelectorAll('[data-emomusic-mode]').forEach(function (button) {
+    var active = button.dataset.emomusicMode === emomusicMode;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
 }
+
+window.addEventListener('mineradio-external-presets-ready', buildPresetGrid);
+window.addEventListener('mineradio-external-preset-change', function (event) {
+  if (event.detail && event.detail.kind === 'space') activeSpaceSourcePreset = event.detail.name || '';
+  refreshPresetGrid();
+});
+window.addEventListener('mineradio-emomusic-mode-change', refreshPresetGrid);
 function triggerPresetParticleTransition(fromPreset, toPreset) {
   presetTransition.active = true;
   presetTransition.start = uniforms.uTime.value;

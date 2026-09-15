@@ -3,6 +3,9 @@ function audioGraphHealthy() {
   return !!(audio && audioReady && audioCtx && audioCtx.state !== 'closed' && source && audioSourceMedia === audio && analyser && beatAnalyser && (gainNode || analysisSinkNode));
 }
 function disconnectAudioGraphNodes(keepSource) {
+  if (window.MineradioExternalVisuals && typeof MineradioExternalVisuals.invalidateAudioSource === 'function') {
+    MineradioExternalVisuals.invalidateAudioSource();
+  }
   [source, analyser, beatAnalyser, gainNode, analysisSinkNode].forEach(function (node) {
     if (!node) return;
     try { node.disconnect(); } catch (e) { }
@@ -178,7 +181,9 @@ function initAudio() {
   analysisSinkNode = sourceUsesCapture ? audioCtx.createGain() : null;
   if (analysisSinkNode) analysisSinkNode.gain.value = 0;
   analyser.fftSize = FFT_SIZE;
-  analyser.smoothingTimeConstant = 0.58;
+  // Keep a little FFT stabilization without stacking a long Web Audio tail on
+  // top of the visual envelopes in the main loop.
+  analyser.smoothingTimeConstant = 0.24;
   beatAnalyser.fftSize = BEAT_FFT_SIZE;
   beatAnalyser.smoothingTimeConstant = 0.10;
   source.connect(analyser);

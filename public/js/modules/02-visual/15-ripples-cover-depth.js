@@ -552,6 +552,7 @@ function updateControlTrackInfo(song) {
     }
   }
   if (artist) artist.textContent = song.artist || '';
+  if (typeof renderCurrentSmartTags === 'function') renderCurrentSmartTags();
   updatePlaybackQualityUi();
   if (typeof updateLyricTimingOffsetUi === 'function') updateLyricTimingOffsetUi(song);
 }

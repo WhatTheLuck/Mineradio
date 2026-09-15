@@ -1,0 +1,228 @@
+{
+	"approved" : true,
+	"contentrating" : "Everyone",
+	"description" : "This wallpaper will react to the sound played by your system (mainly music). The ribbons are able to sync to the energy of the music. Currently most of the effects are just alterations of the post processing but actual ribbon modifications are planned.\n\nIf you would like to see a feature added, please leave a comment below or start a topic.\n\n\nThis is a modified version of a WebGL demo:\nhttps://www.airtightinteractive.com/demos/ribbons/",
+	"file" : "index.html",
+	"general" : 
+	{
+		"properties" : 
+		{
+			"bloom" : 
+			{
+				"order" : 108,
+				"text" : "<h4>Lights</h4>",
+				"type" : "bool",
+				"value" : true
+			},
+			"bloomscale" : 
+			{
+				"condition" : "bloom.value",
+				"editable" : true,
+				"max" : 200,
+				"min" : 1,
+				"order" : 109,
+				"text" : "Scale (%)",
+				"type" : "slider",
+				"value" : 100
+			},
+			"custom_seed" : 
+			{
+				"order" : 120,
+				"text" : "<b>Custom Seed</b><br><i>Changes to the seed will only take effect upon wallpaper reload. Dev mode will show the current seed.</i>",
+				"type" : "bool",
+				"value" : false
+			},
+			"dev" : 
+			{
+				"order" : 122,
+				"text" : "<b>Enable dev mode</b><br><span style='color:gray'>***Any changes in the custom dev menu will not be saved***</span>",
+				"type" : "bool",
+				"value" : false
+			},
+			"eDrop" : 
+			{
+				"order" : 119,
+				"text" : "Enable camera push/pull",
+				"type" : "bool",
+				"value" : true
+			},
+			"eStars" : 
+			{
+				"order" : 118,
+				"text" : "Enable star power",
+				"type" : "bool",
+				"value" : true
+			},
+			"effects" : 
+			{
+				"order" : 101,
+				"text" : "<h3>Effects</h3><span style='color:gray'></span>",
+				"type" : "text"
+			},
+			"extra" : 
+			{
+				"order" : 116,
+				"text" : "<h3>Extra</h3>",
+				"type" : "text"
+			},
+			"frotate" : 
+			{
+				"order" : 117,
+				"text" : "Enable fast rotation",
+				"type" : "bool",
+				"value" : true
+			},
+			"glow" : 
+			{
+				"order" : 105,
+				"text" : "<h4>Glow</h4>",
+				"type" : "bool",
+				"value" : true
+			},
+			"glowamount" : 
+			{
+				"condition" : "glow.value",
+				"editable" : true,
+				"max" : 200,
+				"min" : 1,
+				"order" : 107,
+				"text" : "Amount Scale (%)",
+				"type" : "slider",
+				"value" : 30
+			},
+			"glowscale" : 
+			{
+				"condition" : "glow.value",
+				"editable" : true,
+				"max" : 300,
+				"min" : 1,
+				"order" : 106,
+				"text" : "Size Scale (%)",
+				"type" : "slider",
+				"value" : 100
+			},
+			"noise" : 
+			{
+				"order" : 112,
+				"text" : "<h4>Noise</h4>",
+				"type" : "bool",
+				"value" : false
+			},
+			"noisescale" : 
+			{
+				"condition" : "noise.value",
+				"editable" : true,
+				"max" : 100,
+				"min" : 1,
+				"order" : 113,
+				"text" : "Scale (%)",
+				"type" : "slider",
+				"value" : 5
+			},
+			"rgbshift" : 
+			{
+				"order" : 102,
+				"text" : "<h4>RGB Shift</h4>",
+				"type" : "bool",
+				"value" : true
+			},
+			"rgbshiftchan" : 
+			{
+				"condition" : "rgbshift.value",
+				"editable" : true,
+				"max" : 200,
+				"min" : 50,
+				"order" : 104,
+				"text" : "Sensitivity",
+				"type" : "slider",
+				"value" : 100
+			},
+			"rgbshiftscale" : 
+			{
+				"condition" : "rgbshift.value",
+				"editable" : true,
+				"max" : 20,
+				"min" : 1,
+				"order" : 103,
+				"text" : "Scale (%)",
+				"type" : "slider",
+				"value" : 5
+			},
+			"rspeed" : 
+			{
+				"order" : 114,
+				"text" : "<h4>Ribbon Sync</h4>",
+				"type" : "bool",
+				"value" : true
+			},
+			"rspeedScale" : 
+			{
+				"condition" : "rspeed.value",
+				"editable" : true,
+				"max" : 200,
+				"min" : 0,
+				"order" : 115,
+				"text" : "Scale (%)",
+				"type" : "slider",
+				"value" : 100
+			},
+			"scale" : 
+			{
+				"editable" : true,
+				"max" : 300,
+				"min" : 1,
+				"order" : 100,
+				"text" : "Listen Strength (%)",
+				"type" : "slider",
+				"value" : 100
+			},
+			"schemecolor" : 
+			{
+				"order" : 0,
+				"text" : "ui_browse_properties_scheme_color",
+				"type" : "color",
+				"value" : "0 0 0"
+			},
+			"seed" : 
+			{
+				"condition" : "custom_seed.value",
+				"fraction" : true,
+				"max" : 10000,
+				"min" : 0,
+				"editable" : true,
+				"order" : 121,
+				"precision" : 2,
+				"step" : 0.10000000000000001,
+				"text" : "Seed",
+				"type" : "slider",
+				"value" : 6702.0117446020031
+			},
+			"tilt" : 
+			{
+				"order" : 110,
+				"text" : "<h4>Tilt</h4>",
+				"type" : "bool",
+				"value" : true
+			},
+			"tiltscale" : 
+			{
+				"condition" : "tilt.value",
+				"editable" : true,
+				"max" : 200,
+				"min" : 1,
+				"order" : 111,
+				"text" : "Scale (%)",
+				"type" : "slider",
+				"value" : 100
+			}
+		},
+		"supportsaudioprocessing" : true
+	},
+	"monetization" : false,
+	"preview" : "preview.gif",
+	"tags" : [ "CGI" ],
+	"title" : "[Music Visualizer] Ribbons",
+	"type" : "web",
+	"visibility" : "public",
+	"workshopid" : "928491902"
+}

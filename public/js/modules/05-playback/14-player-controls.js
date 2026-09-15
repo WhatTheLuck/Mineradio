@@ -626,6 +626,7 @@ function reorderQueueForShufflePlaybackOrder(startIdx, opts) {
   return currentIdx;
 }
 function nextTrack(userInitiated) {
+  if (playMode === 'ai' && typeof playAiNextTrack === 'function') return playAiNextTrack(!!userInitiated);
   if (!playQueue.length) return;
   playToggleBusy = false;
   forcePlaybackControlsInteractive();
@@ -653,6 +654,7 @@ function prevTrack(userInitiated) {
   if (!playQueue.length) return;
   playToggleBusy = false;
   forcePlaybackControlsInteractive();
+  if (playMode === 'ai' && typeof playAiPreviousTrack === 'function') return playAiPreviousTrack(!!userInitiated);
   currentIdx = (currentIdx - 1 + playQueue.length) % playQueue.length;
   var opts = userInitiated ? { manual: true, suppressPlayFailureNotice: true } : { suppressPlayFailureNotice: true };
   if (playMode === 'shuffle') opts.skipShuffleOrder = true;
@@ -701,18 +703,20 @@ function playModeIconMarkup(mode) {
 }
 
 function updatePlayModeButton(animate) {
-  var label = playModeLabel(playMode);
+  var displayMode = playMode === 'ai' && typeof smartAiBasePlayMode !== 'undefined' ? smartAiBasePlayMode : playMode;
+  var label = playModeLabel(displayMode);
   var chip = document.getElementById('play-mode-chip');
   var btn = document.getElementById('play-mode-btn');
   var icon = document.getElementById('play-mode-icon');
   if (chip) chip.textContent = label;
   if (btn) {
-    btn.dataset.mode = playMode;
+    btn.dataset.mode = displayMode;
     btn.title = label;
     btn.setAttribute('aria-label', label);
-    btn.classList.toggle('active', playMode !== 'loop');
+    btn.classList.toggle('active', displayMode !== 'loop');
   }
-  if (icon) icon.innerHTML = playModeIconMarkup(playMode);
+  if (icon) icon.innerHTML = playModeIconMarkup(displayMode);
+  if (typeof updateAiControlVisibility === 'function') updateAiControlVisibility();
   if (!animate || !btn) return;
   if (window.gsap) {
     window.gsap.killTweensOf(btn);
@@ -735,18 +739,22 @@ function updatePlayModeButton(animate) {
 
 function cyclePlayMode() {
   var modes = ['loop', 'shuffle', 'single'];
-  var idx = modes.indexOf(playMode);
-  var prevMode = playMode;
-  playMode = modes[(idx + 1) % modes.length];
-  if (playMode === 'shuffle' && prevMode !== 'shuffle') {
+  var aiActive = playMode === 'ai';
+  var currentMode = aiActive && typeof smartAiBasePlayMode !== 'undefined' ? smartAiBasePlayMode : playMode;
+  var idx = modes.indexOf(currentMode);
+  var prevMode = currentMode;
+  var nextMode = modes[(idx + 1) % modes.length];
+  if (aiActive) smartAiBasePlayMode = nextMode;
+  else playMode = nextMode;
+  if (nextMode === 'shuffle' && prevMode !== 'shuffle') {
     reorderQueueForShufflePlaybackOrder(currentIdx, { reason: 'play-mode-shuffle' });
   }
   if (typeof syncActiveAudioRepeatMode === 'function') syncActiveAudioRepeatMode(audio);
-  if (playMode === 'single' && prevMode !== 'single') {
+  if (nextMode === 'single' && prevMode !== 'single') {
     if (typeof clearAlbumGaplessPreload === 'function') clearAlbumGaplessPreload('play-mode-single');
     if (typeof resetCuefieldAutoMix === 'function') resetCuefieldAutoMix('play-mode-single');
   }
   updatePlayModeButton(true);
-  showToast('播放模式: ' + playModeLabel(playMode));
+  showToast('播放顺序: ' + playModeLabel(nextMode));
 }
 updatePlayModeButton(false);

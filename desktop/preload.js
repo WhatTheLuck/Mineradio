@@ -50,6 +50,15 @@ contextBridge.exposeInMainWorld('desktopWindow', {
   addBuiltInPlaylistTrack: (id, track) => ipcRenderer.invoke('mineradio-built-in-playlist-add-track', String(id || ''), track || {}),
   removeBuiltInPlaylistTrack: (id, index) => ipcRenderer.invoke('mineradio-built-in-playlist-remove-track', String(id || ''), Number(index)),
   reorderBuiltInPlaylistTrack: (id, fromIndex, toIndex) => ipcRenderer.invoke('mineradio-built-in-playlist-reorder-track', String(id || ''), Number(fromIndex), Number(toIndex)),
+  visualPresets: (action,kind,name,value) => ipcRenderer.invoke('mineradio-visual-presets',action,kind,name,value),
+  createMergedPlaylist: (name,tracks) => ipcRenderer.invoke('mineradio-merge-playlists',name,tracks),
+  readSmartFavorites: () => ipcRenderer.invoke('mineradio-smart-favorites-read'),
+  saveSmartFavorites: (state) => ipcRenderer.invoke('mineradio-smart-favorites-save', state || {}),
+  getSmartFavoritesLlmStatus: () => ipcRenderer.invoke('mineradio-smart-favorites-llm-status'),
+  configureSmartFavoritesLlm: (payload) => ipcRenderer.invoke('mineradio-smart-favorites-llm-configure', payload || {}),
+  clearSmartFavoritesLlm: () => ipcRenderer.invoke('mineradio-smart-favorites-llm-clear'),
+  testSmartFavoritesLlm: () => ipcRenderer.invoke('mineradio-smart-favorites-llm-test'),
+  analyzeSmartFavoriteTracks: (tracks, tags) => ipcRenderer.invoke('mineradio-smart-favorites-analyze', Array.isArray(tracks) ? tracks : [], Array.isArray(tags) ? tags : []),
   importLocalMusicFiles: async (files) => {
     const entries = [];
     for (const file of Array.from(files || [])) {

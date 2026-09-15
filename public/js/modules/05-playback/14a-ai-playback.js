@@ -1,0 +1,388 @@
+'use strict';
+
+var smartAiOnlineRequest = null;
+var smartAiDraggingTag = '';
+var smartAiNextRequest = null;
+var smartAiBasePlayMode = 'loop';
+
+function smartAiTagStateLabel(state) {
+  return state === 'required' ? '必须符合' : (state === 'preferred' ? '可以符合' : '不选');
+}
+
+function smartAiTagButtonHtml(tag) {
+  var state = normalizeAiTagState(tag.state);
+  return '<button type="button" draggable="true" class="smart-ai-tag" data-smart-ai-tag="' + escHtml(tag.value) + '" data-state="' + state + '" aria-label="' + escHtml(tag.label) + '，' + smartAiTagStateLabel(state) + '" title="点击切换筛选状态；右键删除；拖到当前播放栏可添加给歌曲">' +
+    '<span>' + escHtml(tag.label) + '</span><i aria-hidden="true">' + (state === 'required' ? '必须' : (state === 'preferred' ? '偏好' : '')) + '</i></button>';
+}
+
+function smartTagLabel(value) {
+  var tag = (smartFavoritesState.tags || []).find(function (item) { return item.value === value; });
+  return tag && tag.label || value;
+}
+
+function smartTrackKnownTags(song) {
+  return typeof smartTrackAllTags === 'function' ? smartTrackAllTags(song) : [];
+}
+
+function smartQueueTagHtml(song, compact) {
+  if (playMode !== 'ai') return '';
+  var tags = smartTrackKnownTags(song);
+  if (!tags.length) return '<span class="queue-ai-tags empty">待标注</span>';
+  return '<span class="queue-ai-tags' + (compact ? ' compact' : '') + '">' + tags.map(function (value) {
+    var config = (smartFavoritesState.tags || []).find(function (item) { return item.value === value; });
+    var active = config && config.state !== 'neutral';
+    return '<span class="queue-ai-tag" data-active="' + (active ? 'true' : 'false') + '" data-state="' + (config ? normalizeAiTagState(config.state) : 'neutral') + '">' + escHtml(smartTagLabel(value)) + '</span>';
+  }).join('') + '</span>';
+}
+
+function renderCurrentSmartTags() {
+  var root = document.getElementById('control-song-tags');
+  if (!root) return;
+  var song = currentIdx >= 0 && playQueue[currentIdx] || null;
+  var tags = smartTrackKnownTags(song);
+  root.classList.toggle('empty', !tags.length);
+  root.innerHTML = tags.length ? tags.map(function (value) {
+    return '<button type="button" class="control-song-tag" data-current-song-tag="' + escHtml(value) + '" title="点击或右键删除标签 ' + escHtml(smartTagLabel(value)) + '"><span>' + escHtml(smartTagLabel(value)) + '</span><i aria-hidden="true">×</i></button>';
+  }).join('') : '<span class="control-song-tags-hint">拖入上方标签，为当前歌曲标注</span>';
+}
+
+function removeCurrentSmartTag(value) {
+  var song = currentIdx >= 0 && playQueue[currentIdx] || null;
+  if (!song || !removeSmartTrackTag(song, value)) return;
+  renderCurrentSmartTags();
+  safeRenderQueuePanel('smart-tag-removed');
+  showToast('已从当前歌曲移除标签“' + smartTagLabel(value) + '”');
+}
+
+function bindCurrentSmartTagDrop() {
+  var root = document.getElementById('control-song-tags');
+  if (!root || root.dataset.bound === '1') return;
+  root.dataset.bound = '1';
+  root.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-current-song-tag]');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    removeCurrentSmartTag(button.getAttribute('data-current-song-tag'));
+  });
+  root.addEventListener('contextmenu', function (event) {
+    var button = event.target.closest('[data-current-song-tag]');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    removeCurrentSmartTag(button.getAttribute('data-current-song-tag'));
+  });
+  root.addEventListener('dragover', function (event) { if (smartAiDraggingTag) { event.preventDefault(); if(event.dataTransfer)event.dataTransfer.dropEffect='copy';root.classList.add('drop-ready'); } });
+  root.addEventListener('dragleave', function (event) { if (!root.contains(event.relatedTarget)) root.classList.remove('drop-ready'); });
+  root.addEventListener('drop', function (event) {
+    event.preventDefault();
+    root.classList.remove('drop-ready');
+    var song = currentIdx >= 0 && playQueue[currentIdx] || null;
+    var value = smartAiDraggingTag || (event.dataTransfer && event.dataTransfer.getData('text/mineradio-tag'));
+    if (!song || !value || !setSmartTrackManualTag(song, value)) return;
+    renderCurrentSmartTags();
+    safeRenderQueuePanel('smart-tag-added');
+    showToast('已为当前歌曲添加标签“' + smartTagLabel(value) + '”');
+  });
+}
+
+function setCurrentSmartTagDropTarget(active) {
+  var root = document.getElementById('control-song-tags');
+  if (!root) return;
+  root.classList.toggle('drop-target-active', !!active);
+  if (!active) root.classList.remove('drop-ready');
+}
+
+function renderSmartAiControlBar() {
+  var bar = document.getElementById('smart-ai-control-bar');
+  if (!bar) return;
+  var tags = document.getElementById('smart-ai-tags');
+  if (tags) {
+    tags.innerHTML = (smartFavoritesState.tags || []).map(smartAiTagButtonHtml).join('');
+    tags.querySelectorAll('[data-smart-ai-tag]').forEach(function (button) {
+      button.addEventListener('click', function () { cycleSmartAiTag(button.getAttribute('data-smart-ai-tag')); });
+      button.addEventListener('contextmenu', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        removeSmartAiTag(button.getAttribute('data-smart-ai-tag'));
+      });
+      button.addEventListener('dragstart', function (event) {
+        smartAiDraggingTag = button.getAttribute('data-smart-ai-tag');
+        button.classList.add('smart-ai-dragging');
+        setCurrentSmartTagDropTarget(true);
+        if (event.dataTransfer) { event.dataTransfer.effectAllowed = 'copy'; event.dataTransfer.setData('text/mineradio-tag', smartAiDraggingTag); }
+      });
+      button.addEventListener('dragend', function () { smartAiDraggingTag = ''; button.classList.remove('smart-ai-dragging'); setCurrentSmartTagDropTarget(false); });
+    });
+  }
+  document.querySelectorAll('[data-smart-ai-scope]').forEach(function (button) {
+    var active = button.getAttribute('data-smart-ai-scope') === smartFavoritesState.scope;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  updateAiControlVisibility();
+  bindCurrentSmartTagDrop();
+  renderCurrentSmartTags();
+}
+
+function removeSmartAiTag(value) {
+  value = normalizeAiTag(value);
+  var tag = (smartFavoritesState.tags || []).find(function (item) { return item.value === value; });
+  if (!tag) return;
+  var label = tag.label || value;
+  smartFavoritesState.tags = smartFavoritesState.tags.filter(function (item) { return item.value !== value; });
+  smartFavoritesState.deletedTags = uniqueAiTags((smartFavoritesState.deletedTags || []).concat([value]));
+  saveSmartFavoritesState('delete-filter-tag', true);
+  renderSmartAiControlBar();
+  if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('smart-filter-tag-deleted');
+  showToast('已删除标签“' + label + '”');
+  prefetchSmartAiOnlineCandidates();
+}
+
+function updateAiControlVisibility() {
+  var bar = document.getElementById('smart-ai-control-bar');
+  if (!bar) return;
+  var visible = playMode === 'ai';
+  var direct=document.getElementById('ai-play-mode-btn');
+  if(direct){direct.classList.toggle('active',visible);direct.setAttribute('aria-pressed',String(visible));}
+  bar.hidden = !visible;
+  bar.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  var bottom = document.getElementById('bottom-bar');
+  if (bottom) bottom.classList.toggle('ai-mode', visible);
+}
+
+function cycleSmartAiTag(value) {
+  var tag = (smartFavoritesState.tags || []).find(function (item) { return item.value === value; });
+  if (!tag) return;
+  tag.state = tag.state === 'neutral' ? 'preferred' : (tag.state === 'preferred' ? 'required' : 'neutral');
+  saveSmartFavoritesState('tag-state', true);
+  renderSmartAiControlBar();
+  if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('smart-filter-changed');
+  prefetchSmartAiOnlineCandidates();
+}
+
+function addSmartAiTagFromInput(event) {
+  if (event && event.key !== 'Enter') return;
+  if (event) event.preventDefault();
+  var input = document.getElementById('smart-ai-tag-input');
+  if (!input) return;
+  var label = String(input.value || '').trim().replace(/^#+/, '').slice(0, 32);
+  var value = normalizeAiTag(label);
+  if (!label || !value) return;
+  var existing = smartFavoritesState.tags.find(function (tag) { return tag.value === value; });
+  if (existing) existing.state = existing.state === 'neutral' ? 'preferred' : existing.state;
+  else smartFavoritesState.tags.push({ label: label, value: value, state: 'preferred', preset: false });
+  smartFavoritesState.deletedTags = uniqueAiTags(smartFavoritesState.deletedTags || []).filter(function (tag) { return tag !== value; });
+  input.value = '';
+  saveSmartFavoritesState('new-tag', true);
+  renderSmartAiControlBar();
+  prefetchSmartAiOnlineCandidates();
+}
+
+function setSmartAiScope(scope) {
+  if (!/^(private|online|mixed)$/.test(scope)) return;
+  smartFavoritesState.scope = scope;
+  saveSmartFavoritesState('scope', true);
+  renderSmartAiControlBar();
+  if (scope !== 'private') prefetchSmartAiOnlineCandidates();
+}
+
+function smartAiContext() {
+  var active = smartActiveTagContext();
+  var current = currentIdx >= 0 && playQueue[currentIdx] || null;
+  return {
+    required: active.required,
+    preferred: active.preferred,
+    recentKeys: (smartFavoritesState.history || []).slice(-16),
+    lastTrack: current,
+    energyTarget: null
+  };
+}
+
+function smartAiWeightedPick(tracks, context) {
+  var currentKey = currentIdx >= 0 && playQueue[currentIdx] ? smartTrackKey(playQueue[currentIdx]) : '';
+  var scored = (tracks || []).filter(Boolean).map(function (track) {
+    return { track: track, result: scoreAiCandidate(track, context) };
+  }).filter(function (entry) {
+    return entry.result.eligible && (smartTrackKey(entry.track) !== currentKey || tracks.length === 1);
+  }).sort(function (a, b) { return b.result.score - a.result.score; }).slice(0, SMART_FAVORITES_TOP_N);
+  if (!scored.length) return null;
+  var floor = scored[scored.length - 1].result.score;
+  var weights = scored.map(function (entry) { return Math.max(0.25, entry.result.score - floor + 1); });
+  var total = weights.reduce(function (sum, weight) { return sum + weight; }, 0);
+  var cursor = Math.random() * total;
+  for (var i = 0; i < scored.length; i++) {
+    cursor -= weights[i];
+    if (cursor <= 0) return scored[i].track;
+  }
+  return scored[0].track;
+}
+
+function smartAiQueryInfo() {
+  var active = smartActiveTagContext();
+  var values = uniqueAiTags(active.required.concat(active.preferred));
+  var labels = values.map(function (value) {
+    var tag = smartFavoritesState.tags.find(function (item) { return item.value === value; });
+    return tag && tag.label || value;
+  });
+  return { values: values, query: labels.join(' ') };
+}
+
+function smartAiOnlineProviders() {
+  var providers = ['netease'];
+  if (qqLoginStatus && qqLoginStatus.loggedIn) providers.push('qq');
+  if (kugouLoginStatus && kugouLoginStatus.loggedIn) providers.push('kugou');
+  if (qishuiLoginStatus && qishuiLoginStatus.loggedIn) providers.push('qishui');
+  if (spotifyLoginStatus && spotifyLoginStatus.loggedIn) providers.push('spotify');
+  return providers.slice(0, 3);
+}
+
+function smartAiOnlineCacheKey(queryInfo) {
+  return uniqueAiTags(queryInfo && queryInfo.values || []).sort().join('+') || 'daily';
+}
+
+function smartAiCachedOnlineCandidates(queryInfo) {
+  var entry = smartFavoritesState.onlineCache && smartFavoritesState.onlineCache[smartAiOnlineCacheKey(queryInfo)];
+  if (!entry || Date.now() - Number(entry.cachedAt || 0) > SMART_FAVORITES_ONLINE_CACHE_TTL) return null;
+  return Array.isArray(entry.tracks) ? entry.tracks : [];
+}
+
+async function fetchSmartAiOnlineCandidates(force) {
+  var queryInfo = smartAiQueryInfo();
+  var cached = !force && smartAiCachedOnlineCandidates(queryInfo);
+  if (cached) return cached;
+  if (smartAiOnlineRequest) return smartAiOnlineRequest;
+  if (!queryInfo.query) {
+    var daily = homeDiscoverState && Array.isArray(homeDiscoverState.songs) ? homeDiscoverState.songs.slice(0, 36).map(cloneSong) : [];
+    smartFavoritesState.onlineCache[smartAiOnlineCacheKey(queryInfo)] = { cachedAt: Date.now(), tracks: daily };
+    saveSmartFavoritesState('online-daily-cache', false);
+    return daily;
+  }
+  smartAiOnlineRequest = Promise.allSettled(smartAiOnlineProviders().map(function (provider) {
+    return apiJson(searchProviderUrl(provider, queryInfo.query, 18, 0), { timeoutMs: 14000 });
+  })).then(function (settled) {
+    var tracks = [];
+    settled.forEach(function (entry) {
+      if (entry.status !== 'fulfilled') return;
+      (entry.value && entry.value.songs || []).forEach(function (song) {
+        var clone = cloneSong(song);
+        clone.onlineIntentTags = queryInfo.values.slice();
+        tracks.push(clone);
+      });
+    });
+    tracks = dedupeSmartFavoriteTracks(tracks).slice(0, 72);
+    smartFavoritesState.onlineCache[smartAiOnlineCacheKey(queryInfo)] = { cachedAt: Date.now(), tracks: tracks };
+    saveSmartFavoritesState('online-cache', false);
+    queueSmartFavoriteAnalysis(tracks.slice(0, 24));
+    return tracks;
+  }).finally(function () { smartAiOnlineRequest = null; });
+  return smartAiOnlineRequest;
+}
+
+function prefetchSmartAiOnlineCandidates() {
+  queueSmartFavoriteAnalysis(dedupeSmartFavoriteTracks([].concat(playQueue || [], smartFavoritesState.tracks || [])));
+  if(typeof schedulePlaylistQueueHydration==='function')schedulePlaylistQueueHydration(0,'ai-complete-playlist');
+  return;
+
+}
+
+function smartAiRememberCurrent() {
+  var current = currentIdx >= 0 && playQueue[currentIdx];
+  if (!current) return;
+  var key = smartTrackKey(current);
+  var history = smartFavoritesState.history || [];
+  if (!history.length || history[history.length - 1] !== key) history.push(key);
+  smartFavoritesState.history = history.slice(-100);
+}
+
+function smartAiFindTrack(key) {
+  var pools = [playQueue || [], smartFavoritesState.tracks || []];
+  Object.keys(smartFavoritesState.onlineCache || {}).forEach(function (cacheKey) {
+    var entry = smartFavoritesState.onlineCache[cacheKey];
+    if (entry && Array.isArray(entry.tracks)) pools.push(entry.tracks);
+  });
+  for (var i = 0; i < pools.length; i++) {
+    var found = pools[i].find(function (track) { return smartTrackKey(track) === key; });
+    if (found) return found;
+  }
+  return null;
+}
+
+function playSmartAiSelection(track, userInitiated, historyMode) {
+  if (!track) return false;
+  var index = playQueue.findIndex(function (candidate) { return smartTrackKey(candidate) === smartTrackKey(track); });
+  if (index < 0) { playQueue.push(cloneSong(track)); index = playQueue.length - 1; }
+  if (historyMode !== 'previous') smartFavoritesState.history.push(smartTrackKey(track));
+  smartFavoritesState.history = smartFavoritesState.history.slice(-100);
+  saveSmartFavoritesState('ai-history', false);
+  currentIdx = index;
+  var opts = userInitiated ? { manual: true, suppressPlayFailureNotice: true, aiSelection: true } : { suppressPlayFailureNotice: true, aiSelection: true };
+  Promise.resolve(playQueueAt(index, opts)).finally(forcePlaybackControlsInteractive);
+  queueSmartFavoriteAnalysis([track]);
+  return true;
+}
+
+function playAiNextTrack(userInitiated) {
+  if(smartAiNextRequest)return smartAiNextRequest;
+  smartAiNextRequest=selectAiNextTrack(userInitiated).finally(function(){smartAiNextRequest=null;});
+  return smartAiNextRequest;
+}
+
+async function selectAiNextTrack(userInitiated) {
+  playToggleBusy = false;
+  forcePlaybackControlsInteractive();
+  smartAiRememberCurrent();
+  var signature = smartAnalysisSignature();
+  var pool = playQueue || [];
+  queueSmartFavoriteAnalysis(pool);
+  if(smartFavoritesAnalysisQueue.length||smartFavoritesAnalysisBusy) {
+    clearTimeout(smartFavoritesAnalysisTimer);smartFavoritesAnalysisTimer=0;
+    await runSmartFavoriteAnalysisBatch();
+  }
+  var selected = smartAiWeightedPick(pool, smartAiContext());
+  while(!selected&&smartFavoritesAnalysisQueue.length){
+    clearTimeout(smartFavoritesAnalysisTimer);smartFavoritesAnalysisTimer=0;
+    await runSmartFavoriteAnalysisBatch();
+    if(pool!==playQueue||playMode!=='ai'||signature!==smartAnalysisSignature())return false;
+    selected=smartAiWeightedPick(pool,smartAiContext());
+  }
+  if(pool!==playQueue||playMode!=='ai'||signature!==smartAnalysisSignature())return false;
+  if (!selected) {
+    var active = smartActiveTagContext();
+    showToast(active.required.length ? '没有歌曲同时满足全部“必须”标签' : '当前推荐范围没有可用歌曲');
+    return false;
+  }
+  return playSmartAiSelection(selected, userInitiated, 'next');
+}
+
+function playAiPreviousTrack(userInitiated) {
+  var history = smartFavoritesState.history || [];
+  var current = currentIdx >= 0 && playQueue[currentIdx] ? smartTrackKey(playQueue[currentIdx]) : '';
+  while (history.length && history[history.length - 1] === current) history.pop();
+  var key = history.pop();
+  smartFavoritesState.history = history;
+  if (!key) { showToast('AI 播放历史里还没有上一首'); return false; }
+  var track = smartAiFindTrack(key);
+  if (!track) { showToast('上一首已不在当前可用曲库'); return false; }
+  saveSmartFavoritesState('ai-history-back', false);
+  return playSmartAiSelection(track, userInitiated, 'previous');
+}
+
+function toggleAiPlayMode(){
+  var enabling=playMode!=='ai';
+  if(!enabling) playMode=smartAiBasePlayMode;
+  else {
+    smartAiBasePlayMode=/^(loop|shuffle|single)$/.test(playMode)?playMode:'loop';
+    playMode='ai';
+    if (typeof clearAlbumGaplessPreload === 'function') clearAlbumGaplessPreload('play-mode-ai');
+    if (typeof resetCuefieldAutoMix === 'function') resetCuefieldAutoMix('play-mode-ai');
+    prefetchSmartAiOnlineCandidates();
+  }
+  syncActiveAudioRepeatMode(audio);
+  updatePlayModeButton(true);
+  queueSmartFavoriteAnalysis(playQueue||[]);
+  if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('ai-mode-toggle');
+  showToast(enabling?'AI 播放已开启':'AI 播放已关闭');
+}
+
+renderSmartAiControlBar();

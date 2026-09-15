@@ -8,9 +8,12 @@ const MAX_PLAYLISTS = 100;
 const MAX_TRACKS_PER_PLAYLIST = 5000;
 const MAX_INDEX_BYTES = 32 * 1024 * 1024;
 const MAX_TRACK_BYTES = 48 * 1024;
-const ALLOWED_PROVIDERS = new Set(['netease', 'qq', 'kugou', 'qishui', 'local']);
+const ALLOWED_PROVIDERS = new Set(['netease', 'qq', 'kugou', 'qishui', 'spotify', 'local']);
 
 const TRACK_FIELDS = [
+  'spotifyId', 'spotifyUri', 'uri', 'previewUrl', 'externalUrl',
+  'genre', 'genres', 'style', 'styles', 'mood', 'moods', 'scene', 'scenes', 'activity', 'activities', 'tags',
+  'year', 'language', 'manualTags', 'llmTags', 'sourceVariants', 'artistId', 'artistMid', 'artists',
   'provider', 'source', 'type', 'id', 'providerSongId', 'provider_song_id', 'trackId', 'track_id',
   'mid', 'songmid', 'mediaMid', 'media_mid', 'qqId',
   'hash', 'fileHash', 'audioHash', 'albumId', 'album_id', 'albumMid', 'albummid',
@@ -30,7 +33,7 @@ function cleanText(value, fallback = '', maxLength = 1000) {
 
 function normalizeProvider(song) {
   const source = cleanText(song && (song.provider || song.source || song.type), '', 32).toLowerCase();
-  if (source === 'spotify' || song && (song.spotifyId || song.spotifyUri)) return 'unsupported';
+  if (source === 'spotify' || song && (song.spotifyId || song.spotifyUri)) return 'spotify';
   if (source === 'local' || song && (song.localFileId || song.localKey || song.localUrl)) return 'local';
   if (source === 'qq') return 'qq';
   if (source === 'kugou' || song && (song.hash || song.fileHash || song.audioHash)) return 'kugou';
@@ -65,6 +68,7 @@ function trackIdentity(track) {
   else if (provider === 'qq') value = track.mid || track.songmid || track.id;
   else if (provider === 'kugou') value = track.hash || track.fileHash || track.audioHash || track.id;
   else if (provider === 'qishui') value = track.id || track.providerSongId || track.trackId || track.track_id;
+  else if (provider === 'spotify') value = track.spotifyId || track.id || track.spotifyUri;
   else value = track.id;
   value = cleanText(value, '', 512);
   return value ? `${provider}:${provider === 'kugou' ? value.toLowerCase() : value}` : '';
@@ -221,6 +225,18 @@ class BuiltInPlaylistLibrary {
       const playlist = { id: crypto.randomBytes(12).toString('hex'), name: cleanText(name, '我的歌单', 80), createdAt: Date.now(), updatedAt: Date.now(), tracks: [] };
       next.unshift(playlist);
       return { playlist: this.summary(playlist) };
+    });
+  }
+
+  createMerged(name, sources) {
+    if(!Array.isArray(sources)||!sources.length||sources.length>MAX_TRACKS_PER_PLAYLIST) return Promise.reject(new Error('合并曲目数量无效'));
+    const seen=new Set();
+    const tracks=sources.map(sanitizeTrack).filter(track=>{if(!track||seen.has(track.builtInIdentity))return false;seen.add(track.builtInIdentity);return true;});
+    if(!tracks.length)return Promise.reject(new Error('没有可保存的歌曲'));
+    return this.mutate(next=>{
+      if(next.length>=MAX_PLAYLISTS)throw new Error('收藏夹数量已达上限');
+      const playlist={id:crypto.randomBytes(12).toString('hex'),name:cleanText(name,'合并收藏夹',80),createdAt:Date.now(),updatedAt:Date.now(),tracks};
+      next.unshift(playlist);return {playlist:this.summary(playlist)};
     });
   }
 

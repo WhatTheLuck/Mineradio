@@ -1,0 +1,27 @@
+{
+  "schema": "space-venom-starfield-settings",
+  "version": 1,
+  "name": "Star",
+  "savedAt": "2026-09-02T03:34:09.238Z",
+  "starfield": {
+    "enabled": true,
+    "density": 840,
+    "bassFrom": 25,
+    "bassTo": 400,
+    "bassInputMin": 0.5,
+    "bassInputMax": 0.8,
+    "cruiseSpeed": 1,
+    "quietBrightness": 1.3,
+    "cruiseTrailLength": 0.05,
+    "speedMin": 6.65,
+    "speedMax": 25.9,
+    "starSize": 1.8,
+    "trailLengthMin": 0.05,
+    "trailLengthMax": 0.65,
+    "spread": 0.41,
+    "viewDistance": 0.35,
+    "brightnessMin": 1.5,
+    "brightnessMax": 3.11,
+    "color": "#ffffff"
+  }
+}

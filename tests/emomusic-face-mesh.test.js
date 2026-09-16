@@ -53,6 +53,8 @@ assert.match(source, /if\(loadLatest\)await loadSaved\(select\.value\)/, 'the ne
 assert.equal(context.MineradioEmoMusic.telemetrySourceState('vlm', true).state, 'ready', 'a successful VLM response lights the green ready state');
 assert.equal(context.MineradioEmoMusic.telemetrySourceState('random', true).state, 'random', 'manual random generation overrides readiness with the blue state');
 assert.equal(context.MineradioEmoMusic.telemetrySourceState('vlm', false).state, 'offline', 'an unavailable VLM is never reported as ready');
+assert.equal(context.MineradioEmoMusic.telemetrySourceState('random', true, false).state, 'offline', 'missing faces stop emotion generation even in random mode');
+assert.match(context.MineradioEmoMusic.telemetrySourceState('vlm', true, false).title, /情绪生成已停止/, 'the source indicator explains that generation is stopped without a face');
 assert.equal(context.MineradioEmoMusic.lyricProgressScreenTarget(100, 100), null, 'lyric targeting stays off when no live 3D lyric mesh exists');
 const faceCrop = context.MineradioEmoMusic.faceCropRect(Array.from({ length: 24 }, (_, index) => ({
   x: 0.35 + (index % 6) * 0.06,
@@ -286,6 +288,9 @@ assert.match(source, /vlmReady=true/, 'a successful VLM response enables the gre
 assert.match(source, /telemetryMode==='random'/, 'the blue source state drives local random generation');
 assert.match(source, /range\('pollSeconds','SiliconFlow VLM 检测间隔（秒）',1,60,1\)/, 'VLM detection interval is user-adjustable in seconds');
 assert.match(source, /window\.desktopWindow\.analyzeEmomusicFrame\(captureVlmFrame\(\)\)/, 'camera snapshots cross the trusted Electron bridge for direct VLM analysis');
+assert.match(source, /if\(!hasDetectedFace\(\)\)\{pauseEmotionGeneration\(\);scheduleTelemetry\(false\);return;\}/, 'emotion generation is gated by a recent face before random or VLM work');
+assert.match(source, /if\(!hasDetectedFace\(\)\)throw new Error\('FACE_NOT_DETECTED'\)/, 'an in-flight VLM result is discarded if the face disappears');
+assert.match(source, /latestLandmarks=null;smoothLandmarks=null;lastFaceAt=0;pauseEmotionGeneration\(\)/, 'lost faces clear stale landmarks and stop emotion generation');
 assert.doesNotMatch(source, /127\.0\.0\.1:8081|api\/realtime_state/, 'the renderer no longer calls a local EmoMusic telemetry service');
 assert.match(source, /createRandomTelemetry/);
 assert.match(source, /faceAudioLight/);

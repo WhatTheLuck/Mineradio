@@ -13,6 +13,9 @@ const loader = read('public/js/index-loader.js');
 const loop = read('public/js/modules/11-main-loop.js');
 const presets = read('public/js/modules/07-fx/04-preset-grid-uniforms.js');
 const css = read('public/css/index.css');
+const desktopMain = read('desktop/main.js');
+const desktopPreload = read('desktop/preload.js');
+const vlmClient = read('desktop/emomusic-vlm-client.js');
 
 const context = {
   console,
@@ -22,29 +25,6 @@ const context = {
 };
 vm.createContext(context);
 vm.runInContext(source, context, { filename: '17-emomusic-face-mesh.js' });
-
-let migratedPayload = '';
-const legacyContext = {
-  console,
-  window: { addEventListener() {} },
-  document: { addEventListener() {}, hidden: false },
-  performance: { now: () => 0 },
-  localStorage: {
-    getItem(key) {
-      return key === 'mineradio-emomusic-visual-v2'
-        ? JSON.stringify({ mode: 'particles', lasers: true, faceGlowStrength: 1.7, dispersionStrength: 0.5 })
-        : null;
-    },
-    setItem(key, value) { if (key === 'mineradio-emomusic-visual-v3') migratedPayload = value; }
-  }
-};
-vm.createContext(legacyContext);
-vm.runInContext(source, legacyContext, { filename: '17-emomusic-face-mesh-migration.js' });
-const migrated = JSON.parse(migratedPayload);
-assert.equal(migrated.mode, 'mesh');
-assert.equal(migrated.lasers, false);
-assert.equal(migrated.particleBrightness, 1.7);
-assert.equal(migrated.dispersionEffectHigh, 2.7);
 
 const landmarks = [
   { x: 0, y: 0, z: 0 },
@@ -58,6 +38,64 @@ assert.equal(context.MineradioEmoMusic.defaults.meshDensity, 3, 'mesh defaults t
 assert.equal(context.MineradioEmoMusic.defaults.surfaceMeshOverlay, false, 'Surface defaults to a clean fitted surface without Mesh points or lines');
 assert.equal(context.MineradioEmoMusic.defaults.shake, true, 'RMS peak screen shake is available by default');
 assert.equal(context.MineradioEmoMusic.defaults.lasers, false, 'eye-normal lasers default to off');
+assert.equal(context.MineradioEmoMusic.defaults.peakSensitivity, 1, 'RMS peak sensitivity keeps the established detector response by default');
+assert.equal(context.MineradioEmoMusic.defaults.laserDirection, 'gaze', 'lasers follow the pupil-derived gaze normal by default');
+assert.equal(context.MineradioEmoMusic.defaults.gazeOffsetX, 0, 'manual horizontal gaze offset defaults to neutral');
+assert.equal(context.MineradioEmoMusic.defaults.gazeOffsetY, 0, 'manual vertical gaze offset defaults to neutral');
+assert.equal(context.MineradioEmoMusic.defaults.pollSeconds, 10, 'VLM emotion detection defaults to a ten-second interval');
+assert.equal(context.MineradioEmoMusic.defaults.telemetryMode, 'vlm', 'VLM remains the default telemetry source');
+assert.equal(context.MineradioEmoMusic.defaults.endpoint, undefined, 'VLM no longer depends on a local telemetry endpoint');
+assert.doesNotMatch(source, /冷寂扫描|星河觉醒|棱镜过载|data-builtin/, 'EmoMusic exposes no bundled parameter presets');
+assert.doesNotMatch(source, /localStorage/, 'unsaved live adjustments are never used as a persisted parameter source');
+assert.match(source, /listSaved\(true\)/, 'the saved-parameter list loads its newest item on panel startup');
+assert.match(source, /result\.items\[0\]\.name/, 'the first item from the newest-first desktop store is the default selection');
+assert.match(source, /if\(loadLatest\)await loadSaved\(select\.value\)/, 'the newest saved parameter file is applied automatically');
+assert.equal(context.MineradioEmoMusic.telemetrySourceState('vlm', true).state, 'ready', 'a successful VLM response lights the green ready state');
+assert.equal(context.MineradioEmoMusic.telemetrySourceState('random', true).state, 'random', 'manual random generation overrides readiness with the blue state');
+assert.equal(context.MineradioEmoMusic.telemetrySourceState('vlm', false).state, 'offline', 'an unavailable VLM is never reported as ready');
+assert.equal(context.MineradioEmoMusic.lyricProgressScreenTarget(100, 100), null, 'lyric targeting stays off when no live 3D lyric mesh exists');
+const faceCrop = context.MineradioEmoMusic.faceCropRect(Array.from({ length: 24 }, (_, index) => ({
+  x: 0.35 + (index % 6) * 0.06,
+  y: 0.25 + Math.floor(index / 6) * 0.12,
+})), 1280, 720, 0.2);
+assert.ok(faceCrop && faceCrop.width === faceCrop.height, 'VLM input is a square Face Mesh crop');
+assert.ok(faceCrop.width < 720, 'the VLM crop excludes most of the full camera frame');
+const lyricTargetMesh = {
+  geometry: { parameters: { width: 4 } },
+  matrixWorld: {},
+  updateWorldMatrix() {}
+};
+const lyricTargetContext = {
+  console,
+  window: { addEventListener() {} },
+  document: { addEventListener() {}, hidden: false },
+  performance: { now: () => 0 },
+  camera: {},
+  THREE: {
+    Vector3: class Vector3 {
+      constructor(x, y, z) { this.x = x; this.y = y; this.z = z; }
+      applyMatrix4() { return this; }
+      project() { return this; }
+    }
+  },
+  stageLyrics: {
+    current: {
+      userData: {
+        shownLyricProgress: 0.75,
+        lyric: {
+          rowLayers: [{ isActive: true, mesh: lyricTargetMesh, lineWorldW: 4, lineMask: { width: 100, activeTextWidth: 80 } }]
+        }
+      }
+    }
+  }
+};
+vm.createContext(lyricTargetContext);
+vm.runInContext(source, lyricTargetContext, { filename: '17-emomusic-face-mesh-lyric-target.js' });
+assert.deepEqual(
+  JSON.parse(JSON.stringify(lyricTargetContext.MineradioEmoMusic.lyricProgressScreenTarget(200, 100))),
+  { x: 180, y: 50, progress: 0.75 },
+  'the rendered lyric progress boundary is projected into the EmoMusic canvas'
+);
 assert.equal(dense.length, 7, 'two interpolated particles are added per sampled mesh edge');
 assert.deepEqual(JSON.parse(JSON.stringify(dense[3])), { x: 1 / 3, y: 0, z: 1 / 3, sourceIndex: 0 });
 assert.equal(landmarks.length, 3, 'source landmark array remains unchanged');
@@ -102,6 +140,10 @@ gazeLandmarks[473].x -= 0.035;
 const rightGaze = context.MineradioEmoMusic.estimateGaze(gazeLandmarks, 4 / 3, { x: 0, y: 0 }, 0.12);
 assert.ok(rightGaze.x > 0.12, 'raw webcam x is mirrored into performer-relative gaze direction');
 assert.equal(rightGaze.direction, '右');
+const adjustedGaze = context.MineradioEmoMusic.applyGazeOffset({ valid: true, x: 0, y: -0.25 }, 0.18, 0.3, 0.12);
+assert.equal(adjustedGaze.x, 0.18, 'manual horizontal offset is added after calibration');
+assert.ok(Math.abs(adjustedGaze.y - 0.05) < 1e-12, 'positive vertical offset corrects an upward-biased gaze downward');
+assert.equal(adjustedGaze.direction, '右', 'direction labels use the manually adjusted gaze vector');
 assert.equal(context.MineradioEmoMusic.gazeDirection(-0.5, -0.5, 0.12), '上左');
 assert.deepEqual(JSON.parse(JSON.stringify(context.MineradioEmoMusic.cameraConstraints('eco'))), {
   audio: false,
@@ -143,6 +185,42 @@ const peakState = context.MineradioEmoMusic.createRmsPeakState();
 const peak = context.MineradioEmoMusic.stepRmsPeakDetector(peakState, 0.24, 0.08);
 assert.equal(peak.hit, true, 'a falling edge after a local RMS maximum triggers one ripple');
 assert.ok(peak.power > 0.45, 'RMS peak magnitude drives ripple power');
+const lowSensitivityState = context.MineradioEmoMusic.createRmsPeakState();
+const highSensitivityState = context.MineradioEmoMusic.createRmsPeakState();
+[0.08, 0.08, 0.1].forEach((value, index) => {
+  context.MineradioEmoMusic.stepRmsPeakDetector(lowSensitivityState, value, index * 0.02, 0.4);
+  context.MineradioEmoMusic.stepRmsPeakDetector(highSensitivityState, value, index * 0.02, 2.5);
+});
+const lowSensitivityPeak = context.MineradioEmoMusic.stepRmsPeakDetector(lowSensitivityState, 0.075, 0.08, 0.4);
+const highSensitivityPeak = context.MineradioEmoMusic.stepRmsPeakDetector(highSensitivityState, 0.075, 0.08, 2.5);
+assert.equal(lowSensitivityPeak.hit, false, 'low sensitivity rejects a modest RMS crest');
+assert.equal(highSensitivityPeak.hit, true, 'high sensitivity accepts the same modest RMS crest');
+
+const frontalFace = Array.from({ length: 478 }, () => ({ x: 0.5, y: 0.5, z: 0 }));
+frontalFace[234] = { x: 0.3, y: 0.5, z: 0 };
+frontalFace[454] = { x: 0.7, y: 0.5, z: 0 };
+frontalFace[10] = { x: 0.5, y: 0.25, z: 0 };
+frontalFace[152] = { x: 0.5, y: 0.75, z: 0 };
+const frontalDirection = context.MineradioEmoMusic.estimateFaceOrientation(frontalFace);
+assert.ok(Math.abs(frontalDirection.x) < 1e-12, 'a frontal face has no horizontal ray bias');
+assert.ok(frontalDirection.y < 0, 'a frontal face retains a small visible forward bias');
+const tiltedFace = Array.from({ length: 478 }, () => ({ x: 0.5, y: 0.5, z: 0 }));
+tiltedFace[234] = { x: 0.3, y: 0.5, z: 0.1 };
+tiltedFace[454] = { x: 0.7, y: 0.5, z: -0.1 };
+tiltedFace[10] = { x: 0.5, y: 0.25, z: 0.1 };
+tiltedFace[152] = { x: 0.5, y: 0.75, z: -0.1 };
+const tiltedDirection = context.MineradioEmoMusic.estimateFaceOrientation(tiltedFace);
+assert.ok(tiltedDirection.x > 0, 'face yaw follows the mirrored performer-facing horizontal direction');
+assert.ok(tiltedDirection.y < -0.16, 'face pitch follows the mirrored performer-facing vertical direction');
+
+const lyricEyeMidpoint = { x: 50, y: 40 };
+const lyricTarget = { x: 150, y: 90 };
+const leftLyricRay = context.MineradioEmoMusic.parallelLyricRay({ x: 40, y: 40 }, lyricEyeMidpoint, lyricTarget);
+const rightLyricRay = context.MineradioEmoMusic.parallelLyricRay({ x: 60, y: 40 }, lyricEyeMidpoint, lyricTarget);
+assert.equal(leftLyricRay.x, rightLyricRay.x, 'both lyric-locked rays share one horizontal direction');
+assert.equal(leftLyricRay.y, rightLyricRay.y, 'both lyric-locked rays share one vertical direction');
+assert.equal((leftLyricRay.endX + rightLyricRay.endX) / 2, lyricTarget.x, 'parallel ray endpoints stay centered on lyric progress');
+assert.equal((leftLyricRay.endY + rightLyricRay.endY) / 2, lyricTarget.y, 'parallel ray endpoints stay centered vertically on lyric progress');
 
 const positiveVector = Object.fromEntries([
   'tension_relaxation', 'anger_calmness', 'irritation_leisure', 'sadness_happiness', 'sleepiness_energy'
@@ -154,6 +232,10 @@ assert.equal(fallback.dimensions.length, 5);
 assert.equal(fallback.prompts.items.length, 5);
 assert.equal(fallback.curve.length, 1);
 assert.equal(fallback.curve[0].value, context.MineradioEmoMusic.compositeEmotionValue(fallback.scores), 'emotion curve is calculated from the same random vector');
+const online = context.MineradioEmoMusic.telemetryFromVlm({ model: 'vision-model', analysis: { scores: positiveVector, prompts: [{ tag: 'bright strings', weight: 4, dimension: 'sadness_happiness' }], summary: 'smile' } }, new Date('2026-09-15T12:00:10Z'));
+assert.equal(online.source, 'vlm');
+assert.equal(online.model, 'vision-model');
+assert.equal(online.prompts.items[0].tag, 'bright strings');
 
 assert.match(archive, /name:\s*'EmoMusic'[\s\S]{0,220}FACE MESH/);
 assert.match(archive, /presetDisplayOrder\s*=\s*\[0,\s*15,/);
@@ -167,7 +249,10 @@ assert.match(source, /FACEMESH_RIGHT_IRIS/);
 assert.match(source, /FACEMESH_LEFT_IRIS/);
 assert.match(source, /mineradio-gaze-update/);
 assert.match(source, /注视中央并校准/);
-assert.match(source, /瞳孔中心与 Face Mesh 每帧同步/);
+assert.match(source, /range\('gazeOffsetX','水平视线偏置',-\.6,\.6,\.01\)/);
+assert.match(source, /range\('gazeOffsetY','垂直视线偏置',-\.6,\.6,\.01\)/);
+assert.match(source, /偏置不会被重新校准覆盖/);
+assert.match(source, /先注视中央完成校准，再用偏置微调/);
 assert.match(source, /cameraConstraints\(settings\.cameraProfile\)/);
 assert.match(source, /getUserMedia\(cameraConstraints\(settings\.cameraProfile\)\)/);
 assert.match(source, /video\.videoWidth/);
@@ -183,7 +268,9 @@ assert.match(source, /meshHopDistances/);
 assert.match(source, /meshDensity:\s*3/);
 assert.match(source, /Mesh 点密度/);
 assert.match(source, /drawDenseMeshPoints/);
-assert.match(source, /drawCircularPupils/);
+assert.doesNotMatch(source, /drawCircularPupils/, 'Mesh no longer draws a separate circular pupil outline');
+assert.match(source, /var radius=Math\.max\(4\.8,Math\.min\(w,h\)\*\.007\)/, 'the gaze pupil fill is visibly larger');
+assert.match(source, /if\(settings\.mode!==['"]mesh['"]\)/, 'Mesh suppresses the separate gaze-marker outer ring');
 assert.match(source, /surfaceMeshOverlay:\s*false/);
 assert.match(source, /Surface 显示 Mesh 点和线/);
 assert.doesNotMatch(source, /\[255,48,48\]|\[48,255,48\]/, 'mesh and surface overlays no longer mark the eyes red and green');
@@ -194,10 +281,22 @@ assert.match(source, /angleDown:\s*305/);
 assert.match(source, /angleDown:\s*340/);
 assert.match(source, /data-vector-arrows/);
 assert.doesNotMatch(source, /data-status/, 'the upper-right emotion API status copy is removed');
+assert.match(source, /data-telemetry-source/, 'the emotion panel exposes a compact source light in its header');
+assert.match(source, /vlmReady=true/, 'a successful VLM response enables the green ready state');
+assert.match(source, /telemetryMode==='random'/, 'the blue source state drives local random generation');
+assert.match(source, /range\('pollSeconds','SiliconFlow VLM 检测间隔（秒）',1,60,1\)/, 'VLM detection interval is user-adjustable in seconds');
+assert.match(source, /window\.desktopWindow\.analyzeEmomusicFrame\(captureVlmFrame\(\)\)/, 'camera snapshots cross the trusted Electron bridge for direct VLM analysis');
+assert.doesNotMatch(source, /127\.0\.0\.1:8081|api\/realtime_state/, 'the renderer no longer calls a local EmoMusic telemetry service');
 assert.match(source, /createRandomTelemetry/);
 assert.match(source, /faceAudioLight/);
-assert.doesNotMatch(source, /function faceNormal/, 'laser direction no longer follows the face normal');
+assert.match(source, /estimateFaceOrientation/, 'laser direction can follow the tracked face plane');
 assert.match(source, /gazeState\.x\*1\.35/);
+assert.match(source, /select\('laserDirection','射线方向绑定'/);
+assert.match(source, /value:'lyrics',label:'锁定三维歌词进度位置'/);
+assert.match(source, /shownLyricProgress/);
+assert.match(source, /applyMatrix4\(targetMesh\.matrixWorld\)\.project\(camera\)/, 'lyric targeting projects the rendered 3D progress point through the live camera');
+assert.match(source, /parallelLyricRay\(eye,eyeMidpoint,direction\.target\)/, 'lyric targeting gives both eyes one parallel direction centered on progress');
+assert.match(source, /quadraticCurveTo\(midX\+px\*spread/, 'laser body uses a curved tapered silhouette rather than a rectangle');
 assert.match(source, /peakEnvelope<=\.001\|\|peakPower<=0/, 'laser rendering is completely skipped outside an RMS peak envelope');
 assert.match(source, /range\('laserWidth','射线粗细',\.4,8,\.1\)/, 'laser width exposes the expanded maximum');
 assert.doesNotMatch(source, /var origin=\{x:0,y:0\}/, 'no gaze direction marker is drawn between the two eyes');
@@ -211,15 +310,25 @@ assert.match(source, /data-radar-inner-labels/);
 assert.match(source, /data-radar-outer-labels/);
 assert.doesNotMatch(source, /t\s*=\s*t\s*\*\s*t\s*\*\s*\(3\s*-\s*2\s*\*\s*t\)/, 'dispersion no longer uses a smoothstep curve');
 assert.match(source, /rippleStrength/);
+assert.match(source, /range\('peakSensitivity','峰值检测灵敏度',\.4,2\.5,\.05\)/);
 assert.match(source, /rippleSpeed/);
 assert.match(source, /rippleWidth/);
+assert.match(source, /range\('rippleWidth','波前宽度',\.01,2,\.01\)/, 'wavefront width accepts values down to 0.01');
+assert.match(source, /drawImage\(video,crop\.x,crop\.y,crop\.width,crop\.height,0,0,outputSize,outputSize\)/, 'VLM receives the Face Mesh crop instead of the full camera frame');
+assert.match(source, /standard RGB\/sRGB face crop/, 'the capture path documents its RGB JPEG color contract');
 assert.match(source, /flashStrength/);
 assert.match(source, /particleBrightness/);
 assert.doesNotMatch(source, /drawFaceAura/, 'face-wide radial aura is removed');
 assert.doesNotMatch(source, /var wave\s*=\s*Math\.sin/, 'particles have no perpetual sine jump');
 assert.match(source, /laserWidth/);
 assert.match(source, /laserLength/);
-assert.match(source, /api\/realtime_state/);
+assert.match(desktopPreload, /analyzeEmomusicFrame:[\s\S]{0,160}mineradio-emomusic-vlm-analyze/, 'preload exposes only the bounded VLM request bridge');
+assert.match(desktopMain, /ipcMain\.handle\('mineradio-emomusic-vlm-analyze'/, 'main process owns the VLM network request boundary');
+assert.match(desktopMain, /isTrustedMainWindowIpc\(event\)/, 'VLM IPC accepts only the trusted main window');
+assert.match(vlmClient, /SILICONFLOW_BASE_URL\s*=\s*'https:\/\/api\.siliconflow\.cn\/v1'/, 'VLM uses the official SiliconFlow API base URL');
+assert.match(vlmClient, /SILICONFLOW_CHAT_URL\s*=\s*SILICONFLOW_BASE_URL\s*\+\s*'\/chat\/completions'/, 'VLM calls the official chat-completions resource');
+assert.match(vlmClient, /image_url:\s*\{\s*url:\s*image,\s*detail:\s*'low'/, 'VLM follows the official base64 image_url message format');
+assert.doesNotMatch(source, /process\.env|authorization:\s*['"]Bearer/, 'the renderer never receives or reads the SiliconFlow credential');
 assert.match(source, /visualPresets\('save','emomusic'/);
 assert.match(read('desktop/visual-preset-store.js'), /'emomusic'/);
 assert.match(read('public/js/modules/02-visual/00-pointer-cover-particles.js'), /MineradioEmoMusic\.rotate\(dx,\s*dy\)/);
@@ -235,6 +344,14 @@ assert.match(presets, /applyEmomusicMode/);
 assert.match(read('public/js/modules/07-fx/09-console-workspace.js'), /external-emomusic-controls/);
 assert.match(css, /#emomusic-face-canvas/);
 assert.match(css, /\.emomusic-telemetry/);
+assert.match(css, /\.emomusic-telemetry\{[^}]*overflow:visible/);
+assert.doesNotMatch(css, /\.emomusic-telemetry\{[^}]*overflow:auto/);
+assert.match(css, /\.emomusic-telemetry\{[^}]*width:min\(540px/, 'the full telemetry panel can extend higher and wider without scrolling');
+assert.match(css, /\.emomusic-telemetry-grid\{[^}]*grid-template-columns:minmax\(0,1fr\)/, 'the telemetry charts stack into full-width rows');
+assert.match(css, /\.emomusic-radar-cell\{grid-column:1\/-1\}/, 'the prompt radar owns a dedicated row');
+assert.match(css, /\.emomusic-radar-cell svg\{height:250px\}/, 'the prompt radar has a substantially larger primary display area');
+assert.match(css, /\.emomusic-source-light\[data-state=ready\]:before\{background:#55ef9f/, 'VLM readiness uses a small green indicator');
+assert.match(css, /\.emomusic-source-light\[data-state=random\]:before\{background:#5aa8ff/, 'manual random mode uses a blue indicator');
 assert.match(css, /\.emomusic-mode-submenu/);
 assert.match(css, /\.emomusic-eye-actions/);
 

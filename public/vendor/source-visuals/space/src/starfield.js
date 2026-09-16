@@ -1,5 +1,15 @@
 const DEFAULTS = Object.freeze({
   enabled: true,
+  triggerMode: "bass-threshold",
+  rmsSensitivity: 1,
+  rmsMinThreshold: 0.008,
+  rmsFloorMultiplier: 1.34,
+  rmsCrestRatio: 0.34,
+  rmsCooldown: 0.14,
+  rmsPeakWindow: 0.22,
+  rmsDecay: 7.2,
+  rmsInputMin: 0.5,
+  rmsInputMax: 0.8,
   density: 720,
   bassFrom: 35,
   bassTo: 220,
@@ -31,7 +41,16 @@ const PARAMETER_LIMITS = Object.freeze({
   cruiseTrailLength: [0, 4],
   trailLengthMin: [0, 4],
   trailLengthMax: [0, 4],
-  viewDistance: [0.25, 4]
+  viewDistance: [0.25, 4],
+  rmsSensitivity: [0.4, 2.5],
+  rmsMinThreshold: [0, 0.2],
+  rmsFloorMultiplier: [0.5, 3],
+  rmsCrestRatio: [0.05, 1],
+  rmsCooldown: [0.04, 1],
+  rmsPeakWindow: [0.05, 1],
+  rmsDecay: [0.5, 20],
+  rmsInputMin: [0, 1],
+  rmsInputMax: [0, 1]
 });
 
 const MAPPING_FLOOR_PAIRS = Object.freeze([
@@ -84,14 +103,67 @@ export const calculateStarfieldAudioEnergy = (metrics, parameters = DEFAULTS) =>
   return clamp(Number(metrics?.bass) || 0, 0, 1);
 };
 
+export const createRmsPeakState = () => ({
+  floor: 0,
+  crest: 0.04,
+  previous: 0,
+  candidate: 0,
+  candidateAt: 0,
+  lastHit: -99,
+  envelope: 0,
+  lastStepAt: 0
+});
+
+export const stepRmsPeakDetector = (state, rms, time, parameters = DEFAULTS) => {
+  const detector = state || createRmsPeakState();
+  const level = clamp(Number(rms) || 0, 0, 1);
+  const now = Number(time) || 0;
+  if (!detector.floor && !detector.previous) detector.floor = level;
+  detector.floor += (level - detector.floor) * (level > detector.floor ? 0.018 : 0.075);
+  detector.crest = Math.max(0.04, level, detector.crest * 0.993);
+  const sensitivity = clamp(Number(parameters.rmsSensitivity) || 1, 0.4, 2.5);
+  const thresholdScale = 1 / (0.55 + sensitivity * 0.45);
+  const threshold = Math.max(
+    Number(parameters.rmsMinThreshold) || 0,
+    detector.floor * Number(parameters.rmsFloorMultiplier) * thresholdScale,
+    detector.crest * Number(parameters.rmsCrestRatio) * thresholdScale
+  );
+  let hit = false;
+  let power = 0;
+
+  if (level >= detector.previous && level > threshold) {
+    if (level >= detector.candidate) {
+      detector.candidate = level;
+      detector.candidateAt = now;
+    }
+  } else if (detector.candidate > threshold && detector.previous < detector.candidate + 0.0001) {
+    if (now - detector.lastHit >= Number(parameters.rmsCooldown)) {
+      hit = true;
+      power = clamp((detector.candidate - threshold) / Math.max(0.025, detector.crest - threshold), 0, 1);
+      detector.lastHit = now;
+    }
+    detector.candidate = 0;
+  }
+  if (detector.candidate && now - detector.candidateAt > Number(parameters.rmsPeakWindow)) detector.candidate = 0;
+
+  const elapsed = detector.lastStepAt ? clamp(now - detector.lastStepAt, 0, 0.1) : 0;
+  detector.envelope *= Math.exp(-elapsed * Number(parameters.rmsDecay));
+  if (hit) detector.envelope = Math.max(detector.envelope, power);
+  detector.lastStepAt = now;
+  detector.previous = level;
+  return { hit, power, threshold, rms: level, envelope: detector.envelope, state: detector };
+};
+
 export const calculateStarfieldResponse = (bass, parameters = DEFAULTS) => {
   // One calibration window owns the entire response: the lower bound is the
   // silence threshold, the upper bound is the saturation point, and the
   // interval between them maps linearly to a normalized 0..1 intensity.
-  const intensity = mapLinearClamped(bass, parameters.bassInputMin, parameters.bassInputMax, 0, 1);
+  const inputMin = parameters.triggerMode === "rms-peak" ? parameters.rmsInputMin : parameters.bassInputMin;
+  const inputMax = parameters.triggerMode === "rms-peak" ? parameters.rmsInputMax : parameters.bassInputMax;
+  const intensity = mapLinearClamped(bass, inputMin, inputMax, 0, 1);
   const belowThreshold = Number.isFinite(Number(bass))
-    && Number.isFinite(Number(parameters.bassInputMin))
-    && Number(bass) < Number(parameters.bassInputMin);
+    && Number.isFinite(Number(inputMin))
+    && Number(bass) < Number(inputMin);
   const cruiseTrailLength = Number.isFinite(Number(parameters.cruiseTrailLength))
     ? Number(parameters.cruiseTrailLength)
     : Number(parameters.trailLengthMin);
@@ -177,6 +249,7 @@ export class Starfield {
     this.lastTime = performance.now();
     this.audioEnergy = 0;
     this.targetAudioEnergy = 0;
+    this.rmsPeakState = createRmsPeakState();
     this.reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(document.documentElement);
@@ -193,14 +266,26 @@ export class Starfield {
     if (!(key in DEFAULTS)) return;
     const limits = PARAMETER_LIMITS[key];
     const numericValue = Number(value);
-    this.parameters[key] = limits && Number.isFinite(numericValue)
+    this.parameters[key] = key === "triggerMode"
+      ? (value === "rms-peak" ? "rms-peak" : "bass-threshold")
+      : limits && Number.isFinite(numericValue)
       ? clamp(numericValue, limits[0], limits[1])
       : value;
     this.parameters = enforceStarfieldMappingFloors(this.parameters);
+    if (key === "triggerMode") {
+      this.rmsPeakState = createRmsPeakState();
+      this.audioEnergy = 0;
+      this.targetAudioEnergy = 0;
+    }
     if (key === "density") this.syncStarCount();
   }
 
   setAudioMetrics(metrics) {
+    if (this.parameters.triggerMode === "rms-peak") {
+      const peak = stepRmsPeakDetector(this.rmsPeakState, metrics?.level, performance.now() * 0.001, this.parameters);
+      this.targetAudioEnergy = peak.envelope;
+      return;
+    }
     // Read the analyser bins using this scene's own frequency bounds. The
     // magnetic-fluid bass range and visual mapping remain fully independent.
     this.targetAudioEnergy = calculateStarfieldAudioEnergy(metrics, this.parameters);
@@ -240,7 +325,8 @@ export class Starfield {
   draw(time) {
     const delta = clamp((time - this.lastTime) / 16.667, 0.25, 2.5);
     this.lastTime = time;
-    this.audioEnergy += (this.targetAudioEnergy - this.audioEnergy) * 0.12;
+    if (this.parameters.triggerMode === "rms-peak") this.audioEnergy = this.targetAudioEnergy;
+    else this.audioEnergy += (this.targetAudioEnergy - this.audioEnergy) * 0.12;
     const response = calculateStarfieldResponse(this.audioEnergy, this.parameters);
 
     const context = this.context;
@@ -299,7 +385,7 @@ export class Starfield {
 
   getStatus() {
     const response = calculateStarfieldResponse(this.audioEnergy, this.parameters);
-    return { bass: this.audioEnergy, ...response };
+    return { bass: this.audioEnergy, triggerMode: this.parameters.triggerMode, ...response };
   }
 }
 

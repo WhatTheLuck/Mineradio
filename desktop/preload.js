@@ -59,6 +59,8 @@ contextBridge.exposeInMainWorld('desktopWindow', {
   clearSmartFavoritesLlm: () => ipcRenderer.invoke('mineradio-smart-favorites-llm-clear'),
   testSmartFavoritesLlm: () => ipcRenderer.invoke('mineradio-smart-favorites-llm-test'),
   analyzeSmartFavoriteTracks: (tracks, tags) => ipcRenderer.invoke('mineradio-smart-favorites-analyze', Array.isArray(tracks) ? tracks : [], Array.isArray(tags) ? tags : []),
+  getEmomusicVlmStatus: () => ipcRenderer.invoke('mineradio-emomusic-vlm-status'),
+  analyzeEmomusicFrame: (imageDataUrl) => ipcRenderer.invoke('mineradio-emomusic-vlm-analyze', String(imageDataUrl || '')),
   importLocalMusicFiles: async (files) => {
     const entries = [];
     for (const file of Array.from(files || [])) {

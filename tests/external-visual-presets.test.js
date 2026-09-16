@@ -36,10 +36,36 @@ test('external visual controls omit preview buttons and auto-load each latest sa
  assert.doesNotMatch(moduleSource,/加载所选参数/);
  assert.doesNotMatch(moduleSource,/data-preview/);
  assert.match(moduleSource,/\[data-saved\]'.*onchange/);
- assert.match(moduleSource,/values\.space\.starfield=clone\(\(data\.stars\.find/);
+ assert.match(moduleSource,/values\.space\.starfield=Object\.assign\(\{\},starfieldTriggerDefaults,clone\(\(data\.stars\.find/);
  assert.match(moduleSource,/list\(kind,true\)/);
  assert.match(moduleSource,/select\.value=result\.items\[0\]\.name;await load\(kind\)/);
  assert.match(moduleSource,/已自动加载最新参数/);
+ assert.match(moduleSource,/星空触发模式/);
+ assert.match(moduleSource,/\['bass-threshold','低频阈值'\],\['rms-peak','RMS 峰值'\]/);
+ assert.match(moduleSource,/result\.starfield=Object\.assign\(\{\},starfieldTriggerDefaults/);
+ assert.match(moduleSource,/RMS 最低触发阈值/);
+ assert.match(moduleSource,/RMS 动态底噪倍率/);
+ assert.match(moduleSource,/RMS 历史峰值比例/);
+ assert.match(moduleSource,/RMS 触发冷却（秒）/);
+ assert.match(moduleSource,/RMS 峰值确认窗口（秒）/);
+ assert.match(moduleSource,/RMS 峰值衰减速度/);
+ assert.match(moduleSource,/RMS 强度映射下限/);
+ assert.match(moduleSource,/RMS 强度映射上限/);
+});
+test('starfield RMS peak mode detects a crest and emits a decaying trigger envelope',async()=>{
+ const source=fs.readFileSync(path.join(__dirname,'..','public','vendor','source-visuals','space','src','starfield.js'),'utf8');
+ const module=await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+ const state=module.createRmsPeakState();
+ [0.02,0.04,0.1,0.24].forEach((value,index)=>module.stepRmsPeakDetector(state,value,index*0.02));
+ const peak=module.stepRmsPeakDetector(state,0.12,0.08);
+ assert.equal(peak.hit,true);
+ assert.ok(peak.power>0.5);
+ assert.equal(peak.envelope,peak.power);
+ const decay=module.stepRmsPeakDetector(state,0.03,0.16);
+ assert.ok(decay.envelope>0&&decay.envelope<peak.envelope);
+ const mapped=module.calculateStarfieldResponse(0.65,{...module.DEFAULT_STARFIELD_CONFIG,triggerMode:'rms-peak',rmsInputMin:.5,rmsInputMax:.8});
+ assert.ok(Math.abs(mapped.intensity-.5)<1e-12);
+ assert.match(source,/triggerMode === "rms-peak"/);
 });
 test('external visual audio and drag bridges survive player lifecycle changes',()=>{
  const moduleSource=fs.readFileSync(path.join(__dirname,'..','public','js','modules','02-visual','16-cyber-space-presets.js'),'utf8');

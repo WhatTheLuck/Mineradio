@@ -4,12 +4,13 @@
 var MineradioExternalVisuals = (function () {
   var catalog, values={}, frames={}, active='', ready={}, panels={}, pending={};
   var base='vendor/source-visuals/';
+  var starfieldTriggerDefaults={triggerMode:'bass-threshold',rmsSensitivity:1,rmsMinThreshold:.008,rmsFloorMultiplier:1.34,rmsCrestRatio:.34,rmsCooldown:.14,rmsPeakWindow:.22,rmsDecay:7.2,rmsInputMin:.5,rmsInputMax:.8};
   ['pointermove','pointerdown','pointerleave'].forEach(function(type){window.addEventListener(type,function(event){var api=visualApi(active);if(active!=='space'||!api||!api.pointer)return;var blocked=event.target.closest&&event.target.closest('button,input,select,#fx-panel,#bottom-bar,.modal-mask');var box=frames.space.getBoundingClientRect();api.pointer(blocked||type==='pointerleave'?'leave':type==='pointerdown'?'down':'move',{clientX:event.clientX-box.left,clientY:event.clientY-box.top,preventDefault:function(){}});},{passive:true});});
   function clone(v){return JSON.parse(JSON.stringify(v));}
   function visualApi(kind){return frames[kind]&&frames[kind].contentWindow.sourceVisual;}
   function snapshot(kind){return visualApi(kind)?visualApi(kind).snapshot():values[kind];}
   function apply(kind,value){values[kind]=complete(kind,value);if(visualApi(kind))visualApi(kind).apply(values[kind]);renderBody(kind);}
-  function complete(kind,value){var result=clone(value);if(kind==='space'){result.visual=Object.assign({},catalog.defaults.space.visual,result.visual);result.audio=Object.assign({},catalog.defaults.space.audio,result.audio);}return result;}
+  function complete(kind,value){var result=clone(value);if(kind==='space'){result.visual=Object.assign({},catalog.defaults.space.visual,result.visual);result.audio=Object.assign({},catalog.defaults.space.audio,result.audio);result.starfield=Object.assign({},starfieldTriggerDefaults,result.starfield);}return result;}
   function sampleBand(data,sampleRate,fftSize,from,to){var lo=Math.max(0,Math.floor(from*fftSize/sampleRate)),hi=Math.min(data.length-1,Math.ceil(to*fftSize/sampleRate)),sum=0;for(var i=lo;i<=hi;i++)sum+=data[i]||0;return sum/Math.max(1,hi-lo+1)/255;}
   function ensure(kind){
     if(frames[kind])return;
@@ -29,6 +30,7 @@ var MineradioExternalVisuals = (function () {
     var row=document.createElement('label');row.className='external-range-control';row.setAttribute('data-external-parameter',item[0]);var title=document.createElement('span');title.textContent=item[1];row.append(title);
     var input=document.createElement('input');input.setAttribute('aria-label',item[1]);
     if(item[2]==='bool'){input.type='checkbox';input.checked=!!value;input.onchange=function(){setParameter(kind,item[0],input.checked);};}
+    else if(item[2]==='select'){input=document.createElement('select');input.setAttribute('aria-label',item[1]);input.style.gridColumn='1 / -1';input.style.width='100%';(item[3]||[]).forEach(function(option){input.append(new Option(option[1],option[0]));});input.value=String(value);input.onchange=function(){setParameter(kind,item[0],input.value);};}
     else if(item[2]==='color'){input.type='color';input.value=Array.isArray(value)?'#'+value.map(function(v){return Math.round(v*255).toString(16).padStart(2,'0');}).join(''):value;input.oninput=function(){var v=input.value;setParameter(kind,item[0],Array.isArray(value)?[1,3,5].map(function(i){return parseInt(v.slice(i,i+2),16)/255;}):v);};}
     else {input.type='range';input.min=item[2];input.max=item[3];input.step=item[4];input.value=value;var number=document.createElement('input');number.type='number';number.className='external-number';number.min=input.min;number.max=input.max;number.step=input.step;number.value=value;number.setAttribute('aria-label',item[1]+'数值');
       function commit(raw){if(!isFinite(Number(raw)))return;var v=Math.max(Number(input.min),Math.min(Number(input.max),Number(raw)));input.value=number.value=v;setParameter(kind,item[0],v);}
@@ -83,8 +85,21 @@ var MineradioExternalVisuals = (function () {
   var slots={};
   ['cyber','space'].forEach(function(kind){var slot=document.createElement('div');slot.id='external-'+kind+'-controls';slot.className='external-visual-controls';document.getElementById('fx-panel').append(slot);slots[kind]=slot;});
   fetch(base+'catalog.json').then(function(r){if(!r.ok)throw new Error('无法加载原始预设');return r.json();}).then(async function(data){
+    var starfieldGroup=data.schema.space.find(function(group){return group[0]==='低频星域';});
+    if(starfieldGroup)starfieldGroup[1].unshift(
+      ['starfield.triggerMode','星空触发模式','select',[['bass-threshold','低频阈值'],['rms-peak','RMS 峰值']]],
+      ['starfield.rmsSensitivity','RMS 峰值灵敏度',.4,2.5,.05],
+      ['starfield.rmsMinThreshold','RMS 最低触发阈值',0,.2,.001],
+      ['starfield.rmsFloorMultiplier','RMS 动态底噪倍率',.5,3,.01],
+      ['starfield.rmsCrestRatio','RMS 历史峰值比例',.05,1,.01],
+      ['starfield.rmsCooldown','RMS 触发冷却（秒）',.04,1,.01],
+      ['starfield.rmsPeakWindow','RMS 峰值确认窗口（秒）',.05,1,.01],
+      ['starfield.rmsDecay','RMS 峰值衰减速度',.5,20,.1],
+      ['starfield.rmsInputMin','RMS 强度映射下限',0,1,.001],
+      ['starfield.rmsInputMax','RMS 强度映射上限',0,1,.001]
+    );
     catalog=data;values.cyber=clone(data.cyber.find(function(p){return p.name==='4';}).value);
-    values.space=complete('space',data.space.find(function(p){return p.name==='Venom';}).value);values.space.starfield=clone((data.stars.find(function(p){return p.name==='Star';})||data.stars[0]).value.starfield);
+    values.space=complete('space',data.space.find(function(p){return p.name==='Venom';}).value);values.space.starfield=Object.assign({},starfieldTriggerDefaults,clone((data.stars.find(function(p){return p.name==='Star';})||data.stars[0]).value.starfield));
     slots.cyber.append(panel('cyber'));slots.space.append(panel('space'));renderBody('cyber');renderBody('space');
     window.dispatchEvent(new CustomEvent('mineradio-external-presets-ready'));
     await Promise.all(['cyber','space'].map(function(kind){return list(kind,true).catch(function(e){status(kind,'自动加载失败：'+e.message);});}));

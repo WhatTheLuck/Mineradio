@@ -39,6 +39,21 @@ function apiEndpoint(baseUrl, resource) {
   return apiBaseUrl(baseUrl) + '/' + String(resource || '').replace(/^\/+/, '');
 }
 
+function isRemoteHttpsUrl(value) {
+  try {
+    const url = new URL(apiBaseUrl(value));
+    if (url.protocol !== 'https:') return false;
+    const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+    if (!host || host === 'localhost' || host === '::1' || host === '0.0.0.0' || host.endsWith('.local')) return false;
+    if (/^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host)) return false;
+    const match172 = host.match(/^172\.(\d{1,3})\./);
+    if (match172 && Number(match172[1]) >= 16 && Number(match172[1]) <= 31) return false;
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 function providerError(body) {
   return text(body && body.error && (body.error.message || body.error.code || body.error.type), 240);
 }
@@ -179,13 +194,15 @@ class SmartFavoritesStore {
 
   configStatus() {
     const config = this.readCredential();
+    const remote = isRemoteHttpsUrl(config.baseUrl);
     return {
       ok: true,
-      configured: !!(config.apiKey && config.baseUrl && config.model),
+      configured: !!(config.apiKey && config.baseUrl && config.model && remote),
       hasKey: !!config.apiKey,
       baseUrl: config.baseUrl,
       model: config.model,
       source: config.source,
+      remote,
       encryptionAvailable: !!(this.safeStorage && this.safeStorage.isEncryptionAvailable()),
     };
   }
@@ -195,6 +212,7 @@ class SmartFavoritesStore {
     const baseUrl = apiBaseUrl(payload.baseUrl != null ? payload.baseUrl : previous.baseUrl);
     const model = text(payload.model != null ? payload.model : previous.model, 200);
     const apiKey = text(payload.apiKey, 4096);
+    if (baseUrl && !isRemoteHttpsUrl(baseUrl)) return { ok: false, configured: false, error: 'LLM_REMOTE_HTTPS_REQUIRED' };
     const next = { version: 1, baseUrl, model, updatedAt: Date.now(), encryptedKey: previous.encryptedKey || '' };
     if (apiKey) {
       if (!this.safeStorage || !this.safeStorage.isEncryptionAvailable()) return { ok: false, error: 'SYSTEM_ENCRYPTION_UNAVAILABLE' };
@@ -219,7 +237,7 @@ class SmartFavoritesStore {
 
   async testLlmConnection(options = {}) {
     const config = this.readCredential();
-    if (!config.apiKey || !config.baseUrl || !config.model) {
+    if (!config.apiKey || !config.baseUrl || !config.model || !isRemoteHttpsUrl(config.baseUrl)) {
       return { ok: false, configured: false, stage: 'configuration', error: 'LLM_NOT_CONFIGURED' };
     }
     const timeoutMs = Math.max(3000, Math.min(30000, Number(options.timeoutMs) || 20000));
@@ -316,7 +334,7 @@ class SmartFavoritesStore {
     });
     if (!missing.length) return { ok: true, available: true, results };
     const config = this.readCredential();
-    if (!config.apiKey || !config.baseUrl || !config.model) {
+    if (!config.apiKey || !config.baseUrl || !config.model || !isRemoteHttpsUrl(config.baseUrl)) {
       return { ok: true, available: false, error: 'LLM_NOT_CONFIGURED', results };
     }
     const controller = new AbortController();
@@ -382,4 +400,4 @@ class SmartFavoritesStore {
   }
 }
 
-module.exports = { SmartFavoritesStore, sanitizeAnalysis, sanitizeTrackMetadata, analysisKey, apiBaseUrl, apiEndpoint };
+module.exports = { SmartFavoritesStore, sanitizeAnalysis, sanitizeTrackMetadata, analysisKey, apiBaseUrl, apiEndpoint, isRemoteHttpsUrl };

@@ -17,6 +17,7 @@ const {
 const { BuiltInPlaylistLibrary } = require('./built-in-playlist-library');
 const { VisualPresetStore } = require('./visual-preset-store');
 const { SmartFavoritesStore } = require('./smart-favorites-store');
+const { EmomusicVlmClient } = require('./emomusic-vlm-client');
 const { WallpaperEngineRuntime } = require('./wallpaper-engine-runtime');
 const { FullDesktopModeRuntime } = require('./full-desktop-mode-runtime');
 const {
@@ -150,6 +151,7 @@ const STABLE_USER_DATA_PATH = STARTUP_QA_USER_DATA_PATH || path.join(app.getPath
 fs.mkdirSync(STABLE_USER_DATA_PATH, { recursive: true });
 app.setPath('userData', STABLE_USER_DATA_PATH);
 const smartFavoritesStore = new SmartFavoritesStore({ userDataPath: STABLE_USER_DATA_PATH, safeStorage });
+const emomusicVlmClient = new EmomusicVlmClient({ credentialProvider: () => smartFavoritesStore.readCredential() });
 const INITIAL_CACHE_SETTINGS = ensureCacheDirectories(readCacheSettings());
 const loginEasterEggGate = new LoginEasterEggGate({
   userDataPath: STABLE_USER_DATA_PATH,
@@ -4623,6 +4625,16 @@ ipcMain.handle('mineradio-smart-favorites-llm-test', async (event) => {
 ipcMain.handle('mineradio-smart-favorites-analyze', async (event, tracks, tags) => {
   if (!isTrustedMainWindowIpc(event)) return { ok: false, available: false, results: [], error: 'UNTRUSTED_SENDER' };
   return smartFavoritesStore.analyzeTracks(tracks, tags);
+});
+
+ipcMain.handle('mineradio-emomusic-vlm-status', async (event) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, configured: false, error: 'UNTRUSTED_SENDER' };
+  return emomusicVlmClient.status();
+});
+
+ipcMain.handle('mineradio-emomusic-vlm-analyze', async (event, imageDataUrl) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, error: 'UNTRUSTED_SENDER' };
+  return emomusicVlmClient.analyzeFrame(imageDataUrl);
 });
 
 ipcMain.handle('mineradio-built-in-playlist-page', async (event, id, options = {}) => {

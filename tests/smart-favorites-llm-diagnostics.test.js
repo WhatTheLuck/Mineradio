@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { SmartFavoritesStore, apiBaseUrl, apiEndpoint } = require('../desktop/smart-favorites-store');
+const { SmartFavoritesStore, apiBaseUrl, apiEndpoint, isRemoteHttpsUrl } = require('../desktop/smart-favorites-store');
 
 const fakeSafeStorage = {
   isEncryptionAvailable: () => true,
@@ -43,6 +43,13 @@ test('standalone LLM response test reports DNS, first response, and total timing
 test('OpenAI-compatible URLs are normalized without duplicating chat paths', () => {
   assert.equal(apiBaseUrl('https://example.invalid/v1/chat/completions/'), 'https://example.invalid/v1');
   assert.equal(apiEndpoint('https://example.invalid/v1/models', 'chat/completions'), 'https://example.invalid/v1/chat/completions');
+});
+
+test('LLM configuration accepts public HTTPS APIs and rejects local proxies', () => {
+  assert.equal(isRemoteHttpsUrl('https://api.siliconflow.cn/v1'), true);
+  assert.equal(isRemoteHttpsUrl('https://api.openai.com/v1'), true);
+  assert.equal(isRemoteHttpsUrl('http://127.0.0.1:11434/v1'), false);
+  assert.equal(isRemoteHttpsUrl('https://192.168.1.8/v1'), false);
 });
 
 test('a missing model catalog does not block a working chat endpoint', async t => {

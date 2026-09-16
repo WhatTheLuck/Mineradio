@@ -43,6 +43,7 @@ test('external visual controls omit preview buttons and auto-load each latest sa
  assert.match(moduleSource,/星空触发模式/);
  assert.match(moduleSource,/\['bass-threshold','低频阈值'\],\['rms-peak','RMS 峰值'\]/);
  assert.match(moduleSource,/result\.starfield=Object\.assign\(\{\},starfieldTriggerDefaults/);
+ assert.match(moduleSource,/values\.space\.visual\.cameraDistance=6\.54/);
  assert.match(moduleSource,/RMS 最低触发阈值/);
  assert.match(moduleSource,/RMS 动态底噪倍率/);
  assert.match(moduleSource,/RMS 历史峰值比例/);

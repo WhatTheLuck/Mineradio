@@ -56,7 +56,7 @@ var MineradioEmoMusic = (function () {
     gazeSmoothing: .28, gazeDeadzone: .12,
     gazeCenterX: 0, gazeCenterY: 0,
     gazeOffsetX: 0, gazeOffsetY: 0,
-    telemetry: true, telemetryMode: 'vlm', pollSeconds: 10
+    telemetry: true, telemetryMode: 'random', pollSeconds: 10
   };
   // File presets saved through the desktop bridge are the only persisted
   // parameter source. Until the newest saved preset is read, use defaults.

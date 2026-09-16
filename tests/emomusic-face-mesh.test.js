@@ -43,7 +43,7 @@ assert.equal(context.MineradioEmoMusic.defaults.laserDirection, 'gaze', 'lasers 
 assert.equal(context.MineradioEmoMusic.defaults.gazeOffsetX, 0, 'manual horizontal gaze offset defaults to neutral');
 assert.equal(context.MineradioEmoMusic.defaults.gazeOffsetY, 0, 'manual vertical gaze offset defaults to neutral');
 assert.equal(context.MineradioEmoMusic.defaults.pollSeconds, 10, 'VLM emotion detection defaults to a ten-second interval');
-assert.equal(context.MineradioEmoMusic.defaults.telemetryMode, 'vlm', 'VLM remains the default telemetry source');
+assert.equal(context.MineradioEmoMusic.defaults.telemetryMode, 'random', 'random emotion vectors are enabled by default');
 assert.equal(context.MineradioEmoMusic.defaults.endpoint, undefined, 'VLM no longer depends on a local telemetry endpoint');
 assert.doesNotMatch(source, /冷寂扫描|星河觉醒|棱镜过载|data-builtin/, 'EmoMusic exposes no bundled parameter presets');
 assert.doesNotMatch(source, /localStorage/, 'unsaved live adjustments are never used as a persisted parameter source');

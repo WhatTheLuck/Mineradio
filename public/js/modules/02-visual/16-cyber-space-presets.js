@@ -99,7 +99,9 @@ var MineradioExternalVisuals = (function () {
       ['starfield.rmsInputMax','RMS 强度映射上限',0,1,.001]
     );
     catalog=data;values.cyber=clone(data.cyber.find(function(p){return p.name==='4';}).value);
-    values.space=complete('space',data.space.find(function(p){return p.name==='Venom';}).value);values.space.starfield=Object.assign({},starfieldTriggerDefaults,clone((data.stars.find(function(p){return p.name==='Star';})||data.stars[0]).value.starfield));
+    values.space=complete('space',data.space.find(function(p){return p.name==='Venom';}).value);
+    values.space.visual.cameraDistance=6.54;
+    values.space.starfield=Object.assign({},starfieldTriggerDefaults,clone((data.stars.find(function(p){return p.name==='Star';})||data.stars[0]).value.starfield));
     slots.cyber.append(panel('cyber'));slots.space.append(panel('space'));renderBody('cyber');renderBody('space');
     window.dispatchEvent(new CustomEvent('mineradio-external-presets-ready'));
     await Promise.all(['cyber','space'].map(function(kind){return list(kind,true).catch(function(e){status(kind,'自动加载失败：'+e.message);});}));

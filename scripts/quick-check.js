@@ -3943,7 +3943,14 @@ app.whenReady().then(async () => {
           }
           const translationRows = rows.filter(row => row && row.isTranslation);
           const primaryRows = rows.filter(row => row && row.isPrimary);
-          const runawayRows = translationRows.filter(row => row && row.mesh && Math.abs(row.mesh.position.y) > 3.2);
+          const runawayRows = translationRows.filter(row => {
+            if (!row || !row.mesh) return false;
+            const y = Number(row.mesh.position.y);
+            const baseY = Number(row.baseY);
+            if (!Number.isFinite(y)) return true;
+            const authoredLimit = Number.isFinite(baseY) ? Math.abs(baseY) + 0.5 : 3.2;
+            return Math.abs(y) > Math.max(3.2, authoredLimit);
+          });
           function rowOpacity(row) {
             const mat = row && row.mat;
             if (mat && mat.uniforms && mat.uniforms.uOpacity) return Number(mat.uniforms.uOpacity.value) || 0;

@@ -6,23 +6,21 @@ Mineradio 是一款 Windows 桌面沉浸式音乐播放器，把搜索播放、�
 
 ## 立即下载 Windows 安装包
 
-> 本次下载入口已更换，请使用下面的新网盘链接，并更新旧收藏。通过公告中的网盘入口下载，也是在支持 Mineradio 的持续更新。
+> 正式安装包通过 GitHub Release 发布。请只从当前仓库的发布页下载。
 
 | 下载入口 | 推荐人群 | 链接 |
 | --- | --- | --- |
-| 夸克盘 | 夸克用户 | [下载 Mineradio 2.2.0](https://pan.quark.cn/s/4b124d3e81d3) |
-| 百度云 | 百度网盘用户（提取码 `SJHP`） | [下载 Mineradio 2.2.0](https://pan.baidu.com/s/17CwpHUza67w_Grgc3s5nOw?pwd=SJHP) |
-| GitHub Release | 版本说明与源码 | [查看 Mineradio 2.2.0](https://github.com/XxHuberrr/Mineradio/releases/tag/v2.2.0) |
+| GitHub Release | Windows 安装包、版本说明与源码 | [下载 Mineradio 2.3.0](https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.0) |
 
-本页、发布公告和软件更新入口使用相同的两条新链接。旧分享地址不再作为本次版本的下载入口。
+本页、发布公告和软件更新入口均指向当前仓库的正式 Release。
 
-安装时只需要下载并运行 `Mineradio-2.2.0-Setup.exe`。不要把 `.blockmap`、`latest.yml` 或 `win-unpacked` 当成正式安装包。
+安装时只需要下载并运行 `Mineradio-2.3.0-Setup.exe`。不要把 `latest.yml` 或源码压缩包当成正式安装包。
 
-2.1.0 用户如果未看到更新提醒，请从托盘彻底退出后重新打开软件，切回普通窗口，等待约 30 秒后查看右上角更新箭头。旧版不会自动弹出公告；也可以直接使用上面的新网盘链接下载安装包。
+旧版本如果未看到更新提醒，请从托盘彻底退出后重新打开软件，切回普通窗口，等待约 30 秒后查看右上角更新箭头；也可以直接打开上面的 Release 页面下载安装包。
 
 ## 下载或安装被拦截怎么办
 
-小众 Electron 桌面软件、未签名安装包有时会被浏览器、Windows Defender 或 SmartScreen 提示风险。请先确认安装包来自本次公告的下载入口，文件名是 `Mineradio-2.2.0-Setup.exe`。
+小众 Electron 桌面软件、未签名安装包有时会被浏览器、Windows Defender 或 SmartScreen 提示风险。请先确认安装包来自当前仓库的正式 Release，文件名是 `Mineradio-2.3.0-Setup.exe`。
 
 1. 浏览器下载栏提示风险时，打开下载列表，点这条下载右侧的 `...` 三个点，选择 `保留` / `仍要保留` / `显示更多` 后继续保留。
 2. Windows SmartScreen 弹出蓝色拦截窗口时，点 `更多信息`，再点 `仍要运行`。
@@ -36,15 +34,15 @@ Mineradio 是一款 Windows 桌面沉浸式音乐播放器，把搜索播放、�
 
 ![Mineradio 作者支持渠道](./docs/assets/support/mineradio-author-support-poster.png)
 
-Mineradio 2.2 修复音乐接口的登录与播放问题，改善歌单加载和网络异常恢复，并加入更多手势操作与粒子预设。
+Mineradio 2.3 新增 Smart Favorites、AI 标签与自动播放，以及 CyberRibbon、SpaceVenom、EmoMusic 等实时视觉体验。
 
 ## 当前版本
 
-当前版本：`2.2.0`
+当前版本：`2.3.0`
 
-状态：Mineradio 2.2.0 正式版。
+状态：Mineradio 2.3.0 正式版。
 
-> 安全提示：`v1.0.10` 及更早旧安装包不再建议继续安装或传播。请使用本次公告提供的 `Mineradio-2.2.0-Setup.exe`。
+> 安全提示：`v1.0.10` 及更早旧安装包不再建议继续安装或传播。请使用本次公告提供的 `Mineradio-2.3.0-Setup.exe`。
 
 ## 核心特性
 
@@ -64,11 +62,11 @@ Mineradio 2.2 修复音乐接口的登录与播放问题，改善歌单加载和
 
 ## 使用说明
 
-Windows 用户可以从本次发布公告列出的新网盘入口下载安装包。
+Windows 用户可以从当前仓库的 GitHub Release 页面下载安装包。
 
-正式分发以 `Mineradio-2.2.0-Setup.exe` 为准，不建议直接使用 `win-unpacked` 目录。安装包会创建桌面快捷方式。
+正式分发以 `Mineradio-2.3.0-Setup.exe` 为准，不建议直接使用 `win-unpacked` 目录。安装包会创建桌面快捷方式。
 
-已经安装过旧版本的用户可直接运行 `Mineradio-2.2.0-Setup.exe` 完成更新。软件内更新入口只会打开浏览器下载页，不会在客户端内下载或应用补丁。
+已经安装过旧版本的用户可直接运行 `Mineradio-2.3.0-Setup.exe` 完成更新。软件内更新入口只会打开浏览器下载页，不会在客户端内下载或应用补丁。
 
 ## 开发运行
 

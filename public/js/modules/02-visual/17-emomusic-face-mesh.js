@@ -40,24 +40,24 @@ var MineradioEmoMusic = (function () {
   ];
 
   var defaults = {
-    mode: 'mesh', particleSize: 1, motionStrength: 1,
-    meshLineWidth: 1, meshDensity: 3, surfaceOpacity: .78, surfaceSpecular: 1, surfaceMeshOverlay: false,
+    mode: 'particles', particleSize: .9, motionStrength: 1.25,
+    meshLineWidth: .35, meshDensity: 5, surfaceOpacity: .85, surfaceSpecular: 0, surfaceMeshOverlay: false,
     dispersion: true,
-    dispersionBandLowHz: 45, dispersionBandHighHz: 180,
-    dispersionTriggerLow: .12, dispersionTriggerHigh: .48,
-    dispersionEffectLow: 0, dispersionEffectHigh: 4.2,
-    peakSensitivity: 1,
-    ripple: true, rippleStrength: .82, rippleSpeed: 1, rippleWidth: 1,
-    shake: true, shakeStrength: .72,
-    flash: true, flashStrength: .72,
+    dispersionBandLowHz: 64, dispersionBandHighHz: 653,
+    dispersionTriggerLow: .79, dispersionTriggerHigh: .97,
+    dispersionEffectLow: 2.8, dispersionEffectHigh: 12,
+    peakSensitivity: .5,
+    ripple: true, rippleStrength: .35, rippleSpeed: 1.35, rippleWidth: .35,
+    shake: true, shakeStrength: .3,
+    flash: true, flashStrength: .5,
     particleBrightness: 1.15,
-    lasers: false, laserDirection: 'gaze', laserStrength: .9, laserWidth: 1, laserLength: 1,
-    galaxy: true, galaxyDensity: .72,
+    lasers: true, laserDirection: 'lyrics', laserStrength: .7, laserWidth: 3.3, laserLength: 1.65,
+    galaxy: true, galaxyDensity: .15,
     eyeTracking: true, gazeOverlay: true, cameraProfile: 'eco',
-    gazeSmoothing: .28, gazeDeadzone: .12,
-    gazeCenterX: 0, gazeCenterY: 0,
-    gazeOffsetX: 0, gazeOffsetY: 0,
-    telemetry: true, telemetryMode: 'random', pollSeconds: 10
+    gazeSmoothing: .45, gazeDeadzone: .1,
+    gazeCenterX: .006028199398630182, gazeCenterY: -.054092100642267105,
+    gazeOffsetX: -.08, gazeOffsetY: .14,
+    telemetry: true, telemetryMode: 'vlm', pollSeconds: 10
   };
   // File presets saved through the desktop bridge are the only persisted
   // parameter source. Until the newest saved preset is read, use defaults.

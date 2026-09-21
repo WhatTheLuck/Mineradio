@@ -84,7 +84,11 @@ var MineradioExternalVisuals = (function () {
   }
   var slots={};
   ['cyber','space'].forEach(function(kind){var slot=document.createElement('div');slot.id='external-'+kind+'-controls';slot.className='external-visual-controls';document.getElementById('fx-panel').append(slot);slots[kind]=slot;});
-  fetch(base+'catalog.json').then(function(r){if(!r.ok)throw new Error('无法加载原始预设');return r.json();}).then(async function(data){
+  Promise.all([
+    fetch(base+'catalog.json').then(function(r){if(!r.ok)throw new Error('无法加载原始预设');return r.json();}),
+    fetch(base+'software-defaults.json').then(function(r){if(!r.ok)throw new Error('无法加载软件默认参数');return r.json();})
+  ]).then(async function(result){
+    var data=result[0],softwareDefaults=result[1]||{};
     var starfieldGroup=data.schema.space.find(function(group){return group[0]==='低频星域';});
     if(starfieldGroup)starfieldGroup[1].unshift(
       ['starfield.triggerMode','星空触发模式','select',[['bass-threshold','低频阈值'],['rms-peak','RMS 峰值']]],
@@ -98,10 +102,9 @@ var MineradioExternalVisuals = (function () {
       ['starfield.rmsInputMin','RMS 强度映射下限',0,1,.001],
       ['starfield.rmsInputMax','RMS 强度映射上限',0,1,.001]
     );
-    catalog=data;values.cyber=clone(data.cyber.find(function(p){return p.name==='4';}).value);
-    values.space=complete('space',data.space.find(function(p){return p.name==='Venom';}).value);
-    values.space.visual.cameraDistance=6.54;
-    values.space.starfield=Object.assign({},starfieldTriggerDefaults,clone((data.stars.find(function(p){return p.name==='Star';})||data.stars[0]).value.starfield));
+    catalog=data;values.cyber=clone(softwareDefaults.cyber||data.cyber.find(function(p){return p.name==='4';}).value);
+    values.space=complete('space',softwareDefaults.space||data.space.find(function(p){return p.name==='Venom';}).value);
+    values.space.starfield=Object.assign({},starfieldTriggerDefaults,clone((softwareDefaults.space&&softwareDefaults.space.starfield)||(data.stars.find(function(p){return p.name==='Star';})||data.stars[0]).value.starfield));
     slots.cyber.append(panel('cyber'));slots.space.append(panel('space'));renderBody('cyber');renderBody('space');
     window.dispatchEvent(new CustomEvent('mineradio-external-presets-ready'));
     await Promise.all(['cyber','space'].map(function(kind){return list(kind,true).catch(function(e){status(kind,'自动加载失败：'+e.message);});}));

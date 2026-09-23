@@ -15,6 +15,7 @@ const {
   registerLocalMusicScheme,
 } = require('./local-music-library');
 const { BuiltInPlaylistLibrary } = require('./built-in-playlist-library');
+const { syncBundledMusic } = require('./bundled-music');
 const { VisualPresetStore } = require('./visual-preset-store');
 const { SmartFavoritesStore } = require('./smart-favorites-store');
 const { EmomusicVlmClient } = require('./emomusic-vlm-client');
@@ -5994,6 +5995,16 @@ if (!gotSingleInstanceLock) {
   });
 
   app.whenReady().then(async () => {
+    try {
+      await syncBundledMusic({
+        appPath: app.getAppPath(),
+        userDataPath: STABLE_USER_DATA_PATH,
+        localMusicLibrary,
+        builtInPlaylistLibrary,
+      });
+    } catch (error) {
+      console.warn('[BundledMusic] local playlist unavailable:', error && error.message || error);
+    }
     try {
       await localMusicLibrary.installProtocol(protocol);
     } catch (error) {

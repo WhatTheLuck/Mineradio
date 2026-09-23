@@ -4,6 +4,7 @@ const path = require('path');
 
 const BUILT_IN_PLAYLIST_VERSION = 1;
 const BUILT_IN_PLAYLIST_FILE = 'built-in-playlists.json';
+const BUNDLED_MUSIC_PLAYLIST_ID = crypto.createHash('sha256').update('mineradio-bundled-local-music').digest('hex').slice(0, 24);
 const MAX_PLAYLISTS = 100;
 const MAX_TRACKS_PER_PLAYLIST = 5000;
 const MAX_INDEX_BYTES = 32 * 1024 * 1024;
@@ -240,6 +241,20 @@ class BuiltInPlaylistLibrary {
     });
   }
 
+  syncBundledMusic(tracks) {
+    const sanitized = (Array.isArray(tracks) ? tracks : []).map(sanitizeTrack).filter(Boolean);
+    return this.mutate((next) => {
+      let playlist = next.find((item) => item.id === BUNDLED_MUSIC_PLAYLIST_ID);
+      if (!playlist) {
+        playlist = { id: BUNDLED_MUSIC_PLAYLIST_ID, name: '本地音乐', createdAt: Date.now(), updatedAt: Date.now(), tracks: [] };
+        next.unshift(playlist);
+      }
+      playlist.tracks = sanitized.slice(0, MAX_TRACKS_PER_PLAYLIST);
+      playlist.updatedAt = Date.now();
+      return { playlist: this.summary(playlist) };
+    });
+  }
+
   rename(id, name) {
     return this.mutate((next) => {
       const playlist = next.find((item) => item.id === cleanText(id, '', 64).toLowerCase());
@@ -304,6 +319,7 @@ class BuiltInPlaylistLibrary {
 
 module.exports = {
   BUILT_IN_PLAYLIST_FILE,
+  BUNDLED_MUSIC_PLAYLIST_ID,
   BUILT_IN_PLAYLIST_VERSION,
   BuiltInPlaylistLibrary,
   sanitizeTrack,

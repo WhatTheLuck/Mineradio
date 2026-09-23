@@ -26,6 +26,7 @@
     },
     "files": [
       "desktop/**/*",
+      "music/**/*",
       "public/**/*",
       "build/**/*",
       "cuefield/**/*",

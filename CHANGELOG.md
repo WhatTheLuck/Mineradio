@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.3.1
+
+- 随安装包提供 28 首本地 MP3；首次启动自动加入“本地音乐”歌单，支持断网播放。
+- 延续最新保存的 CyberRibbon、SpaceVenom 与 EmoMusic 视觉参数作为软件默认值。
+
 ## v2.3.0
 
 - 新增 Smart Favorites：支持合并收藏、AI 标签分析与按偏好自动播放。

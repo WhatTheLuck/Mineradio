@@ -1,34 +1,31 @@
-# Mineradio 2.3.0 发布流程
+# Mineradio 2.3.1 发布流程
 
 ## 发布边界
 
-- 正式版本：`2.3.0`
-- Git tag：`v2.3.0`
-- Release 标题：`Mineradio 2.3.0`
-- 安装包：`Mineradio-2.3.0-Setup.exe`
+- 正式版本：`2.3.1`
+- Git tag：`v2.3.1`
+- Release 标题：`Mineradio 2.3.1`
+- 安装包：`Mineradio-2.3.1-Setup.exe`
 - 仅从当前可信源码完整构建，不复用旧安装包或旧 `dist/`。
 - 正式 Release 不混入 Mineradio_Beat 产物。
 - GitHub Release 只附带完整安装包和最小版本说明 `latest.yml`；不上传 blockmap、构建清单或内部测试产物。
 
 ## 公开更新说明
 
-- 新增 Smart Favorites：支持合并收藏、AI 标签分析与按偏好自动播放。
-- 新增 CyberRibbon、SpaceVenom 与 EmoMusic 视觉预设及实时参数控制。
-- EmoMusic 支持人脸、视线和音乐能量驱动；无人脸时会停止情绪生成并清除过期状态。
-- LLM/VLM 请求统一通过 Electron 主进程安全调用，凭据不会进入渲染器或源码。
-- 优化视觉默认值、歌词排布以及磁流体和星空的音频响应。
+- 随安装包提供 28 首本地 MP3，首次启动加入“本地音乐”歌单，断网时仍可播放。
+- CyberRibbon、SpaceVenom 与 EmoMusic 使用最新保存预设对应的软件默认参数；用户保存的更新预设仍优先加载。
 
 ## 下载入口
 
-- GitHub Release：[下载 Mineradio 2.3.0](https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.0)
+- GitHub Release：[下载 Mineradio 2.3.1](https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.1)
 
-<!-- mineradio-download-page: GitHub Release|https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.0 -->
+<!-- mineradio-download-page: GitHub Release|https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.1 -->
 
 ## 发布资产
 
-GitHub Release 上传 `dist/Mineradio-2.3.0-Setup.exe` 和 `docs/update/latest.yml`。版本说明仅包含 `version/releaseDate`，不得使用带安装包下载字段的构建工具清单。
+GitHub Release 上传 `dist/Mineradio-2.3.1-Setup.exe` 和 `docs/update/latest.yml`。版本说明仅包含 `version/releaseDate`，不得使用带安装包下载字段的构建工具清单。
 
-安装包 SHA-256：`05b22ad12e1ff381f127aa43738c4fbfc67cb017be024ba5a570d473a6453fe2`。
+安装包 SHA-256：`d444fa69e39af5c6f5d2564e8961340bb5f8f38fd19e51bb7a129ddab3ad2c9e`。
 
 ## 发布前检查
 

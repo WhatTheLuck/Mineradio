@@ -63,6 +63,7 @@ async function smartMuqEnsureTexts() {
   smartMuqTextRequest = smartFavoritesBridge().embedMuqTexts(tags).then(function (result) {
     if (!result || !result.ok) throw new Error(result && result.error || 'MuQ 文本编码失败');
     Object.assign(smartMuqTextVectors, result.vectors);
+    if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('muq-texts-ready');
   }).finally(function () { smartMuqTextRequest = null; });
   return smartMuqTextRequest;
 }
@@ -138,10 +139,28 @@ function smartTrackKnownTags(song) {
   return typeof smartTrackAllTags === 'function' ? smartTrackAllTags(song) : [];
 }
 
+function smartMuqInferredTags(song) {
+  var vector = song && smartMuqAudioVectors[smartTrackKey(song)];
+  if (!vector) return [];
+  return (smartFavoritesState.tags || []).map(function (tag) {
+    return { tag: tag, score: smartMuqCosine(vector, smartMuqTextVectors[tag.value]) };
+  }).filter(function (row) { return isFinite(row.score); })
+    .sort(function (a, b) { return b.score - a.score; }).slice(0, 2);
+}
+
 function smartQueueTagHtml(song, compact) {
   if (playMode !== 'ai') return '';
   var tags = smartTrackKnownTags(song);
-  if (!tags.length) return '<span class="queue-ai-tags empty">待标注</span>';
+  if (!tags.length) {
+    var inferred = smartMuqInferredTags(song);
+    if (inferred.length) return '<span class="queue-ai-tags' + (compact ? ' compact' : '') + '">' + inferred.map(function (row) {
+      return '<span class="queue-ai-tag" data-source="muq" title="MuQ 音频相似度推断，未保存为人工标注">MuQ · ' + escHtml(row.tag.label || row.tag.value) + '</span>';
+    }).join('') + '</span>';
+    var key = song && smartTrackKey(song);
+    var status = key && smartMuqAudioVectors[key] ? 'MuQ 已编码 · 无可用标签' :
+      (key && smartFavoritesAnalysisAttempts[key] ? 'MuQ 编码失败' : 'MuQ 待编码');
+    return '<span class="queue-ai-tags empty">' + status + '</span>';
+  }
   return '<span class="queue-ai-tags' + (compact ? ' compact' : '') + '">' + tags.map(function (value) {
     var config = (smartFavoritesState.tags || []).find(function (item) { return item.value === value; });
     var active = config && config.state !== 'neutral';

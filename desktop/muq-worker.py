@@ -98,7 +98,14 @@ def main():
                     value = str(request['text'])[:200]
                     if not value:
                         raise ValueError('EMPTY_TEXT')
-                    vector = model(texts=[value])
+                    try:
+                        vector = model(texts=[value])
+                    except TypeError as exc:
+                        if 'TextEncodeInput' not in str(exc) and 'TextInputSequence' not in str(exc):
+                            raise
+                        # Recreate the cached tokenizer before a bounded retry.
+                        model.mulan_module.text._tokenizer = None
+                        vector = model(texts=[value])
                 else:
                     raise ValueError('INVALID_REQUEST')
             vector = vector.squeeze().float().cpu().numpy()

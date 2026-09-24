@@ -28,6 +28,10 @@ const renderer = {
   playQueue: tracks,
   currentIdx: -1,
   smartTrackKey: track => track.key,
+  smartTrackAllTags: () => [],
+  escHtml: value => String(value),
+  playMode: 'ai',
+  smartFavoritesAnalysisAttempts: {},
 };
 vm.createContext(renderer);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/js/modules/05-playback/14a-ai-playback.js'), 'utf8'), renderer);
@@ -35,6 +39,11 @@ Object.assign(renderer.smartMuqAudioVectors, audio);
 Object.assign(renderer.smartMuqTextVectors, text);
 const renderedOrder = Array.from(renderer.smartMuqRank(), row => row.track.key);
 assert.deepStrictEqual(renderedOrder, results.map(row => row.key), 'renderer and main ranking agree');
+assert.ok(renderer.smartQueueTagHtml(tracks[0], false).includes('MuQ · 摇滚'), 'encoded track shows a distinct inferred tag');
+assert.ok(renderer.smartQueueTagHtml(tracks[2], false).includes('MuQ · 学习'), 'inference follows audio similarity');
+assert.ok(renderer.smartQueueTagHtml({ key: 'missing' }, false).includes('MuQ 待编码'), 'missing audio is identified as pending');
+renderer.smartFavoritesAnalysisAttempts.missing = true;
+assert.ok(renderer.smartQueueTagHtml({ key: 'missing' }, false).includes('MuQ 编码失败'), 'failed audio is identified separately');
 (async () => {
   const client = Object.create(MuqRecommendation.prototype);
   client.cache = { text: {} };

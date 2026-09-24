@@ -19591,6 +19591,7 @@ body.desktop-shell.desktop-wallpaper-mode.diy-mode #bottom-bar.stage-mode {
   line-height: 1.2
 }
 .queue-ai-tag[data-active="true"] { color: #e5fff9; border-color: rgba(0, 245, 212, .4); background: rgba(0, 245, 212, .13) }
+.queue-ai-tag[data-source="muq"] { color: #b6dce9; border-color: rgba(131, 185, 207, .35); background: rgba(131, 185, 207, .1) }
 .queue-ai-tag[data-state="required"] { color: #f1edff; border-color: rgba(184, 168, 255, .54); background: rgba(119, 88, 255, .2) }
 
 @media (max-width: 760px) {

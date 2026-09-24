@@ -343,9 +343,11 @@ async function performSmartFavoriteAnalysisBatch() {
     smartMuqAudioFingerprints[key] = fingerprint;
     smartAiAnalysisStatus('MuQ 已编码 '+Object.keys(smartMuqAudioVectors).length+' 首 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首');
     if (typeof renderSmartAiPlaylist === 'function') renderSmartAiPlaylist();
+    if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('muq-audio-ready');
   } catch (error) {
     smartAiAnalysisStatus('MuQ 编码失败：'+(error && error.message || '音频不可用')+' · 点击重试');
     smartFavoritesAnalysisAttempts[smartTrackKey(batch[0])] = true;
+    if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('muq-audio-failed');
     if (error && error.message === '模型尚未打包') smartFavoritesAnalysisQueue = [];
   }
   smartFavoritesAnalysisBusy = false;

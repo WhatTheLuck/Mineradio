@@ -273,7 +273,7 @@ function commentTimeLabel(ms) {
   var t = Number(ms) || 0;
   if (!t) return '';
   try {
-    return new Date(t).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    return new Date(t).toLocaleDateString(window.MineradioI18n && window.MineradioI18n.getLanguage() === 'en' ? 'en-US' : 'zh-CN', { month: 'short', day: 'numeric' });
   } catch (e) {
     return '';
   }
@@ -285,11 +285,16 @@ function renderDetailComments(comments) {
     var avatar = user.avatar ? coverUrlWithSize(user.avatar, 64) : '';
     return '<div class="comment-item">' +
       (avatar ? '<img class="comment-avatar" src="' + avatar + '" alt="">' : '<div class="comment-avatar"></div>') +
-      '<div class="comment-main"><div class="comment-meta">' + escHtml(user.nickname || '音乐用户') + (c.likedCount ? (' · ' + c.likedCount + ' 赞') : '') + (c.time ? (' · ' + escHtml(commentTimeLabel(c.time))) : '') + '</div>' +
+      '<div class="comment-main"><div class="comment-meta"><span class="comment-user-name">' + escHtml(user.nickname || '音乐用户') + '</span>' + (c.likedCount ? (' · <span>' + c.likedCount + ' 赞</span>') : '') + (c.time ? (' · <span data-comment-time="' + Number(c.time) + '">' + escHtml(commentTimeLabel(c.time)) + '</span>') : '') + '</div>' +
       '<div class="comment-text">' + escHtml(c.content || '') + '</div></div>' +
       '</div>';
   }).join('') + '</div>';
 }
+window.addEventListener('mineradio-language-change', function () {
+  document.querySelectorAll('#song-comments [data-comment-time]').forEach(function (node) {
+    node.textContent = commentTimeLabel(Number(node.getAttribute('data-comment-time')));
+  });
+});
 function detailCommentsConfig(song) {
   var provider = songProviderKey(song);
   if (provider === 'qq') {

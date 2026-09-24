@@ -593,6 +593,37 @@ body.desktop-shell #desktop-titlebar::after {
   pointer-events: auto
 }
 
+.language-switch {
+  height: 30px;
+  min-width: 42px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 10px;
+  background: rgba(4, 8, 10, .52);
+  color: rgba(224, 250, 255, .86);
+  font: 700 11px Inter, sans-serif;
+  letter-spacing: .06em;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.language-switch:hover,
+.language-switch:focus-visible {
+  border-color: rgba(244, 210, 138, .65);
+  color: #fff1bd;
+}
+
+#browser-language-switch {
+  position: fixed;
+  z-index: 550;
+  top: 10px;
+  right: 14px;
+}
+
+body.desktop-shell #browser-language-switch {
+  display: none;
+}
+
 .desktop-window-btn {
   width: 38px;
   height: 30px;

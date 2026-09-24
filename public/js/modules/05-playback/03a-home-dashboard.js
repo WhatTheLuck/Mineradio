@@ -120,13 +120,15 @@ function homeDashboardUpdateClock() {
   if (!time || !date) return;
   var now = new Date();
   time.textContent = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-  date.textContent = now.toLocaleDateString('zh-CN', {
+  date.textContent = now.toLocaleDateString(window.MineradioI18n && window.MineradioI18n.getLanguage() === 'en' ? 'en-US' : 'zh-CN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     weekday: 'long',
   });
 }
+
+window.addEventListener('mineradio-language-change', homeDashboardUpdateClock);
 
 function homeDashboardNotify(message) {
   if (typeof showToast === 'function') showToast(message);

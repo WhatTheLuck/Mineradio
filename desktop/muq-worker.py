@@ -14,6 +14,7 @@ import torch
 from safetensors import safe_open
 from safetensors.torch import load_file, save_file
 from muq import MuQMuLan
+from transformers import AutoTokenizer
 
 
 def expand_weights(source, target):
@@ -84,6 +85,10 @@ def main():
         raise RuntimeError('Bundled MuQ model is missing')
     model_dir, cache_dir = prepare_model(asset_model_dir)
     model = MuQMuLan.from_pretrained(str(model_dir), cache_dir=str(cache_dir)).to('cpu').eval()
+    text_model = model.mulan_module.text
+    text_model._tokenizer = AutoTokenizer.from_pretrained(
+        'xlm-roberta-base', use_fast=False, cache_dir=str(cache_dir)
+    )
     for line in sys.stdin:
         request = None
         try:
@@ -103,8 +108,10 @@ def main():
                     except TypeError as exc:
                         if 'TextEncodeInput' not in str(exc) and 'TextInputSequence' not in str(exc):
                             raise
-                        # Recreate the cached tokenizer before a bounded retry.
-                        model.mulan_module.text._tokenizer = None
+                        # Recreate the slow tokenizer before a bounded retry.
+                        text_model._tokenizer = AutoTokenizer.from_pretrained(
+                            'xlm-roberta-base', use_fast=False, cache_dir=str(cache_dir)
+                        )
                         vector = model(texts=[value])
                 else:
                     raise ValueError('INVALID_REQUEST')

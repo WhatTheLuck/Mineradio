@@ -2,7 +2,6 @@
 
 var smartAiOnlineRequest = null;
 var smartAiDraggingTag = '';
-var smartAiNextRequest = null;
 var smartAiBasePlayMode = 'loop';
 var smartMuqAudioVectors = Object.create(null);
 var smartMuqAudioFingerprints = Object.create(null);
@@ -75,6 +74,10 @@ function smartMuqCosine(a, b) {
   return aa && bb ? sum / Math.sqrt(aa * bb) : NaN;
 }
 
+function smartMuqRelevancePercent(score) {
+  return Math.max(0, Math.min(100, Math.round(score * 100)));
+}
+
 function smartMuqRank() {
   var tags = smartMuqTags();
   var required = tags.filter(function (tag) { return tag.state === 'required'; });
@@ -111,7 +114,7 @@ function renderSmartAiPlaylist() {
   if (!root) return;
   var rows = smartMuqRank().filter(function (row) { return row.index !== currentIdx; }).slice(0, 12);
   root.innerHTML = rows.map(function (row, index) {
-    return '<button type="button" data-muq-index="'+row.index+'"><b>'+(index+1)+'</b><span>'+escHtml(row.track.name || row.track.title || '未知歌曲')+'</span><small>'+Math.round(row.score*100)+'%</small></button>';
+    return '<button type="button" data-muq-index="'+row.index+'"><b>'+(index+1)+'</b><span>'+escHtml(row.track.name || row.track.title || '未知歌曲')+'</span><small>'+smartMuqRelevancePercent(row.score)+'%</small></button>';
   }).join('') || '<span class="smart-ai-recommend-empty">正在分析歌单音频…</span>';
 }
 
@@ -150,18 +153,26 @@ function smartMuqInferredTags(song) {
 
 function smartQueueTagHtml(song, compact) {
   if (playMode !== 'ai') return '';
+  var audioVector = song && smartMuqAudioVectors[smartTrackKey(song)];
+  var selected = smartMuqTags();
+  var relevance = selected.map(function (tag) {
+    var score = smartMuqCosine(audioVector, smartMuqTextVectors[tag.value]);
+    var value = isFinite(score) ? smartMuqRelevancePercent(score) + '%' : '计算中';
+    return '<span class="queue-ai-relevance-item" title="' + escHtml(tag.label) + ' · MuQ 音频与标签的余弦相关度"><b>' + escHtml(tag.label) + '</b> ' + value + '</span>';
+  }).join('');
+  var relevanceHtml = relevance ? '<span class="queue-ai-relevance' + (compact ? ' compact' : '') + '">' + relevance + '</span>' : '';
   var tags = smartTrackKnownTags(song);
   if (!tags.length) {
     var inferred = smartMuqInferredTags(song);
-    if (inferred.length) return '<span class="queue-ai-tags' + (compact ? ' compact' : '') + '">' + inferred.map(function (row) {
+    if (inferred.length) return relevanceHtml + '<span class="queue-ai-tags' + (compact ? ' compact' : '') + '">' + inferred.map(function (row) {
       return '<span class="queue-ai-tag" data-source="muq" title="MuQ 音频相似度推断，未保存为人工标注">MuQ · ' + escHtml(row.tag.label || row.tag.value) + '</span>';
     }).join('') + '</span>';
     var key = song && smartTrackKey(song);
     var status = key && smartMuqAudioVectors[key] ? 'MuQ 已编码 · 无可用标签' :
       (key && smartFavoritesAnalysisAttempts[key] ? 'MuQ 编码失败' : 'MuQ 待编码');
-    return '<span class="queue-ai-tags empty">' + status + '</span>';
+    return relevanceHtml + '<span class="queue-ai-tags empty">' + status + '</span>';
   }
-  return '<span class="queue-ai-tags' + (compact ? ' compact' : '') + '">' + tags.map(function (value) {
+  return relevanceHtml + '<span class="queue-ai-tags' + (compact ? ' compact' : '') + '">' + tags.map(function (value) {
     var config = (smartFavoritesState.tags || []).find(function (item) { return item.value === value; });
     var active = config && config.state !== 'neutral';
     return '<span class="queue-ai-tag" data-active="' + (active ? 'true' : 'false') + '" data-state="' + (config ? normalizeAiTagState(config.state) : 'neutral') + '">' + escHtml(smartTagLabel(value)) + '</span>';
@@ -462,38 +473,34 @@ function playSmartAiSelection(track, userInitiated, historyMode) {
 }
 
 function playAiNextTrack(userInitiated) {
-  if(smartAiNextRequest)return smartAiNextRequest;
-  smartAiNextRequest=selectAiNextTrack(userInitiated).catch(function(error){
+  try { return selectAiNextTrack(userInitiated); }
+  catch (error) {
     smartAiAnalysisStatus('MuQ 推荐失败：'+(error && error.message || '模型不可用'));
     showToast('MuQ 推荐暂不可用');
     return false;
-  }).finally(function(){smartAiNextRequest=null;});
-  return smartAiNextRequest;
+  }
 }
 
-async function selectAiNextTrack(userInitiated) {
+function selectAiNextTrack(userInitiated) {
   playToggleBusy = false;
   forcePlaybackControlsInteractive();
-  smartAiRememberCurrent();
   var pool = playQueue || [];
+  if (!pool.length) return false;
   queueSmartFavoriteAnalysis(pool);
-  await smartMuqEnsureTexts();
-  var warmup = 0;
-  var deadline = Date.now() + 120000;
-  while ((smartFavoritesAnalysisQueue.length || smartFavoritesAnalysisBusy) && warmup < 4 && Date.now() < deadline) {
-    clearTimeout(smartFavoritesAnalysisTimer);smartFavoritesAnalysisTimer=0;
-    await Promise.race([runSmartFavoriteAnalysisBatch(), new Promise(function (resolve) { setTimeout(resolve, Math.max(1, deadline - Date.now())); })]);
-    warmup++;
-    if (pool !== playQueue || playMode !== 'ai') return false;
-  }
+  smartMuqEnsureTexts().then(renderSmartAiPlaylist).catch(function (error) { smartAiAnalysisStatus('MuQ 文本编码失败：' + error.message); });
   var selectedRow = smartMuqRank().find(function (row) { return row.index !== currentIdx; });
   var selected = selectedRow && selectedRow.track;
-  if (pool !== playQueue || playMode !== 'ai') return false;
   if (!selected) {
-    var active = smartActiveTagContext();
-    showToast(smartFavoritesAnalysisQueue.length || smartFavoritesAnalysisBusy ? 'MuQ 正在编码歌曲，请稍后再试' : (active.required.length ? '没有已编码歌曲同时满足全部“必须”标签' : '当前歌单没有可编码的候选歌曲'));
-    return false;
+    var incomplete = smartFavoritesAnalysisQueue.length || smartFavoritesAnalysisBusy ||
+      pool.some(function (track) { return !smartMuqAudioVectors[smartTrackKey(track)]; }) ||
+      smartMuqTags().some(function (tag) { return !smartMuqTextVectors[tag.value]; });
+    if (!incomplete) {
+      showToast('没有已编码歌曲同时满足全部“必须”标签');
+      return false;
+    }
+    selected = pool[(currentIdx + 1) % pool.length];
   }
+  smartAiRememberCurrent();
   return playSmartAiSelection(selected, userInitiated, 'next');
 }
 

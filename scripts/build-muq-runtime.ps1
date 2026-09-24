@@ -10,7 +10,7 @@ if (-not (Test-Path (Join-Path $venv 'Scripts/python.exe'))) {
 }
 $pip = Join-Path $venv 'Scripts/pip.exe'
 $pythonExe = Join-Path $venv 'Scripts/python.exe'
-& $pip install 'torch==2.5.1' 'torchaudio==2.5.1' 'torchvision==0.20.1' 'transformers==4.46.3' 'huggingface_hub>=0.26,<1' 'hf_xet>=1,<2' 'muq==0.1.0' 'pyinstaller>=6,<7' 'numpy<2'
+& $pip install 'torch==2.5.1' 'torchaudio==2.5.1' 'torchvision==0.20.1' 'transformers==4.46.3' 'huggingface_hub>=0.26,<1' 'hf_xet>=1,<2' 'muq==0.1.0' 'sentencepiece>=0.2,<0.3' 'pyinstaller>=6,<7' 'numpy<2'
 if ($LASTEXITCODE -ne 0) { throw 'MuQ Python dependencies failed to install.' }
 New-Item -ItemType Directory -Force -Path $runtime | Out-Null
 $download = @'
@@ -37,7 +37,7 @@ if not os.path.isfile(target):
 & $pythonExe -c $convert
 if ($LASTEXITCODE -ne 0) { throw 'MuQ model conversion failed.' }
 $pyOut = Join-Path $root 'build/muq-pyinstaller'
-& $pythonExe -m PyInstaller --noconfirm --clean --onedir --name muq-worker --distpath $pyOut --workpath (Join-Path $pyOut 'work') --specpath $pyOut --collect-all muq --collect-all transformers --collect-all nnAudio --collect-all x_clip (Join-Path $root 'desktop/muq-worker.py')
+& $pythonExe -m PyInstaller --noconfirm --clean --onedir --name muq-worker --distpath $pyOut --workpath (Join-Path $pyOut 'work') --specpath $pyOut --collect-all muq --collect-all transformers --collect-all nnAudio --collect-all x_clip --collect-all sentencepiece (Join-Path $root 'desktop/muq-worker.py')
 if ($LASTEXITCODE -ne 0) { throw 'MuQ worker packaging failed.' }
 Copy-Item -Path (Join-Path $pyOut 'muq-worker/*') -Destination $runtime -Recurse -Force
 $bundle = Join-Path $root 'build/muq-placeholder-bundle'

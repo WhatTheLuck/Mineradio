@@ -32,6 +32,9 @@ const renderer = {
   escHtml: value => String(value),
   playMode: 'ai',
   smartFavoritesAnalysisAttempts: {},
+  playToggleBusy: false,
+  smartFavoritesAnalysisQueue: [],
+  smartFavoritesAnalysisBusy: false,
 };
 vm.createContext(renderer);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/js/modules/05-playback/14a-ai-playback.js'), 'utf8'), renderer);
@@ -41,9 +44,27 @@ const renderedOrder = Array.from(renderer.smartMuqRank(), row => row.track.key);
 assert.deepStrictEqual(renderedOrder, results.map(row => row.key), 'renderer and main ranking agree');
 assert.ok(renderer.smartQueueTagHtml(tracks[0], false).includes('MuQ · 摇滚'), 'encoded track shows a distinct inferred tag');
 assert.ok(renderer.smartQueueTagHtml(tracks[2], false).includes('MuQ · 学习'), 'inference follows audio similarity');
+assert.ok(renderer.smartQueueTagHtml(tracks[0], false).includes('<b>摇滚</b> 100%'), 'selected tag relevance is shown per track');
+assert.ok(renderer.smartQueueTagHtml(tracks[0], false).includes('<b>学习</b> 0%'), 'relevance is clamped to the displayed percentage range');
 assert.ok(renderer.smartQueueTagHtml({ key: 'missing' }, false).includes('MuQ 待编码'), 'missing audio is identified as pending');
+assert.ok(renderer.smartQueueTagHtml({ key: 'missing' }, false).includes('计算中'), 'missing embedding never appears as a zero score');
 renderer.smartFavoritesAnalysisAttempts.missing = true;
 assert.ok(renderer.smartQueueTagHtml({ key: 'missing' }, false).includes('MuQ 编码失败'), 'failed audio is identified separately');
+renderer.currentIdx = 0;
+renderer.queueSmartFavoriteAnalysis = () => true;
+renderer.smartMuqEnsureTexts = () => new Promise(() => {});
+renderer.forcePlaybackControlsInteractive = () => {};
+renderer.saveSmartFavoritesState = () => {};
+renderer.playQueueAt = index => { renderer.playedIndex = index; return Promise.resolve(); };
+renderer.showToast = () => {};
+renderer.smartAiAnalysisStatus = message => { renderer.errorStatus = message; };
+assert.strictEqual(renderer.playAiNextTrack(true), true, 'cached recommendation switches synchronously: ' + renderer.errorStatus);
+assert.strictEqual(renderer.playedIndex, 1);
+Object.keys(renderer.smartMuqAudioVectors).forEach(key => { delete renderer.smartMuqAudioVectors[key]; });
+assert.strictEqual(renderer.playAiNextTrack(true), true, 'pending encoding falls back without waiting: ' + renderer.errorStatus);
+assert.strictEqual(renderer.playedIndex, 2);
+assert.strictEqual(renderer.playAiNextTrack(true), true, 'rapid repeated skips remain available');
+assert.strictEqual(renderer.playedIndex, 3);
 (async () => {
   const client = Object.create(MuqRecommendation.prototype);
   client.cache = { text: {} };

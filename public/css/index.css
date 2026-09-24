@@ -19578,6 +19578,11 @@ body.desktop-shell.desktop-wallpaper-mode.diy-mode #bottom-bar.stage-mode {
 .qi-sub,
 .mini-queue-sub { display: flex; align-items: center; gap: 5px; min-width: 0 }
 .mini-queue-artist { min-width: 0; overflow: hidden; text-overflow: ellipsis }
+.queue-ai-relevance { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 3px; overflow-x: auto; scrollbar-width: none }
+.queue-ai-relevance::-webkit-scrollbar { display: none }
+.queue-ai-relevance-item { flex: 0 0 auto; color: #bceee6; font-size: 9px; white-space: nowrap }
+.queue-ai-relevance-item b { font-weight: 500 }
+.queue-ai-relevance + .queue-ai-tags { max-width: 30% }
 .queue-ai-tags { min-width: 0; display: inline-flex; align-items: center; gap: 3px; overflow: hidden }
 .queue-ai-tags.empty { flex: 0 0 auto; color: rgba(225, 236, 242, .36); font-size: 8px }
 .queue-ai-tag {

@@ -21,6 +21,9 @@ payload = base64.b64encode(struct.pack('<240000f', *samples)).decode('ascii')
 requests = [
     {'id': 1, 'kind': 'text', 'text': '适合在开车时听的音乐'},
     {'id': 2, 'kind': 'audio', 'pcm': payload},
+    {'id': 3, 'kind': 'text', 'text': '摇滚'},
+    {'id': 4, 'kind': 'text', 'text': '适合在学习时听的音乐'},
+    {'id': 5, 'kind': 'text', 'text': 'Calm electronic music for a night drive'},
 ]
 try:
     for request in requests:

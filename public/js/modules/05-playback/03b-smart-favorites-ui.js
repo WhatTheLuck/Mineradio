@@ -6,6 +6,7 @@ var smartFavoritesAnalysisQueue = [];
 var smartFavoritesAnalysisBusy = false;
 var smartFavoritesAnalysisTimer = 0;
 var smartFavoritesAnalysisPromise = null;
+var smartFavoritesAnalysisPaused = !!smartFavoritesState.muqPaused;
 var smartMetadataRequests = Object.create(null);
 var smartFavoritesAnalysisAttempts = Object.create(null);
 
@@ -13,26 +14,29 @@ function smartAnalysisTags() { return (smartFavoritesState.tags || []).map(funct
 function smartAnalysisSignature() { return JSON.stringify(smartAnalysisTags()); }
 function smartAiAnalysisStatus(message) {
   var node = document.getElementById('smart-ai-analysis-status');
-  if (node) node.textContent = message;
+  if (node) {
+    node.textContent = message;
+    node.title = smartFavoritesAnalysisPaused ? '继续 MuQ 编码' : '暂停 MuQ 编码';
+    node.setAttribute('aria-label', node.title + '。' + message);
+    node.dataset.paused = String(smartFavoritesAnalysisPaused);
+  }
 }
 
-function smartAnalysisAvailability(tracks) {
-  var rows = (tracks || []).filter(Boolean);
-  var count = function (test) { return rows.filter(test).length; };
-  var named = count(function (track) { return !!(track.name || track.title); });
-  var artists = count(function (track) { return !!track.artist; });
-  var albums = count(function (track) { return !!track.album; });
-  var providerTags = count(function (track) { return smartTrackProviderTags(track).length > 0; });
-  var rich = count(function (track) { return !!(track.year || track.language || track.description); });
-  return rows.length + ' 首：标题 ' + named + '、歌手 ' + artists + '、专辑 ' + albums + '、已有标签 ' + providerTags + '、补充信息 ' + rich;
-}
-
-function retrySmartFavoriteAnalysis() {
-  var tracks = (playQueue || []).length ? playQueue : smartFavoritesState.tracks;
-  smartFavoritesAnalysisQueue = [];
-  smartFavoritesAnalysisAttempts = Object.create(null);
-  smartAiAnalysisStatus('准备重试 · ' + smartAnalysisAvailability(tracks));
-  queueSmartFavoriteAnalysis(tracks);
+function toggleSmartFavoriteAnalysis() {
+  smartFavoritesAnalysisPaused = !smartFavoritesAnalysisPaused;
+  smartFavoritesState.muqPaused = smartFavoritesAnalysisPaused;
+  saveSmartFavoritesState('muq-pause', true);
+  if (smartFavoritesAnalysisPaused) {
+    if (smartFavoritesAnalysisTimer) clearTimeout(smartFavoritesAnalysisTimer);
+    smartFavoritesAnalysisTimer = 0;
+    smartAiAnalysisStatus('MuQ ' + (smartFavoritesAnalysisBusy ? '暂停中 · 当前歌曲完成后暂停' : '已暂停') + ' · 待处理 ' + smartFavoritesAnalysisQueue.length + ' 首 · 点击继续');
+    return;
+  }
+  if (!smartFavoritesAnalysisQueue.length && !smartFavoritesAnalysisBusy) {
+    queueSmartFavoriteAnalysis((playQueue || []).length ? playQueue : smartFavoritesState.tracks);
+  }
+  smartAiAnalysisStatus('MuQ 已继续 · 待处理 ' + smartFavoritesAnalysisQueue.length + ' 首 · 点击暂停');
+  scheduleSmartFavoriteAnalysis(100);
 }
 
 async function enrichSmartTrack(track) {
@@ -308,12 +312,13 @@ function queueSmartFavoriteAnalysis(tracks) {
     queued[key] = true;
     smartFavoritesAnalysisQueue.push(track);
   });
+  if (smartFavoritesAnalysisPaused) smartAiAnalysisStatus('MuQ 已暂停 · 待处理 ' + smartFavoritesAnalysisQueue.length + ' 首 · 点击继续');
   scheduleSmartFavoriteAnalysis(220);
   return true;
 }
 
 function scheduleSmartFavoriteAnalysis(delay) {
-  if (smartFavoritesAnalysisBusy || smartFavoritesAnalysisTimer || !smartFavoritesAnalysisQueue.length) return;
+  if (smartFavoritesAnalysisPaused || smartFavoritesAnalysisBusy || smartFavoritesAnalysisTimer || !smartFavoritesAnalysisQueue.length) return;
   smartFavoritesAnalysisTimer = setTimeout(runSmartFavoriteAnalysisBatch, Math.max(100, Number(delay) || 0));
 }
 
@@ -325,12 +330,12 @@ function runSmartFavoriteAnalysisBatch() {
 
 async function performSmartFavoriteAnalysisBatch() {
   smartFavoritesAnalysisTimer = 0;
-  if (smartFavoritesAnalysisBusy || !smartFavoritesAnalysisQueue.length) return;
+  if (smartFavoritesAnalysisPaused || smartFavoritesAnalysisBusy || !smartFavoritesAnalysisQueue.length) return;
   var bridge = smartFavoritesBridge();
   if (!bridge || typeof bridge.embedMuqAudio !== 'function') return;
   smartFavoritesAnalysisBusy = true;
   var batch = smartFavoritesAnalysisQueue.splice(0, 1);
-  smartAiAnalysisStatus('MuQ 音频编码中 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首');
+  smartAiAnalysisStatus('MuQ 音频编码中 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首 · 点击暂停');
   try {
     var status = await bridge.getMuqStatus();
     if (!status || !status.available) throw new Error('模型尚未打包');
@@ -341,16 +346,17 @@ async function performSmartFavoriteAnalysisBatch() {
     if (existing && existing.fingerprint === fingerprint) smartMuqAudioVectors[key] = existing.vector;
     else smartMuqAudioVectors[key] = await smartMuqEmbedTrack(batch[0], fingerprint);
     smartMuqAudioFingerprints[key] = fingerprint;
-    smartAiAnalysisStatus('MuQ 已编码 '+Object.keys(smartMuqAudioVectors).length+' 首 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首');
+    smartAiAnalysisStatus('MuQ 已编码 '+Object.keys(smartMuqAudioVectors).length+' 首 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首 · 点击暂停');
     if (typeof renderSmartAiPlaylist === 'function') renderSmartAiPlaylist();
     if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('muq-audio-ready');
   } catch (error) {
-    smartAiAnalysisStatus('MuQ 编码失败：'+(error && error.message || '音频不可用')+' · 点击重试');
+    smartAiAnalysisStatus('MuQ 编码失败：'+(error && error.message || '音频不可用'));
     smartFavoritesAnalysisAttempts[smartTrackKey(batch[0])] = true;
     if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('muq-audio-failed');
     if (error && error.message === '模型尚未打包') smartFavoritesAnalysisQueue = [];
   }
   smartFavoritesAnalysisBusy = false;
+  if (smartFavoritesAnalysisPaused) smartAiAnalysisStatus('MuQ 已暂停 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首 · 点击继续');
   if (smartFavoritesAnalysisQueue.length) scheduleSmartFavoriteAnalysis(200);
 }
 
@@ -429,6 +435,8 @@ function bindSmartFavoritesModal() {
 }
 
 loadSmartFavoritesState().then(function () {
+  smartFavoritesAnalysisPaused = !!smartFavoritesState.muqPaused;
+  if (smartFavoritesAnalysisPaused) smartAiAnalysisStatus('MuQ 已暂停 · 点击继续');
   bindSmartFavoritesModal();
   renderSmartAiControlBar();
   if (typeof renderHomeDashboardQuickCards === 'function') renderHomeDashboardQuickCards();

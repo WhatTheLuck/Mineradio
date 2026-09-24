@@ -33,6 +33,7 @@ function smartFavoritesDefaultState() {
     onlineCache: {},
     metadataCache: {},
     analysisCache: {},
+    muqPaused: false,
     lastSyncAt: 0,
     updatedAt: 0
   };
@@ -194,6 +195,7 @@ function sanitizeSmartFavoritesState(raw) {
     onlineCache: raw.onlineCache && typeof raw.onlineCache === 'object' ? raw.onlineCache : {},
     metadataCache: raw.metadataCache && typeof raw.metadataCache === 'object' ? raw.metadataCache : {},
     analysisCache: raw.analysisCache && typeof raw.analysisCache === 'object' ? raw.analysisCache : {},
+    muqPaused: raw.muqPaused === true,
     lastSyncAt: Number(raw.lastSyncAt) || 0,
     updatedAt: Number(raw.updatedAt) || 0
   };

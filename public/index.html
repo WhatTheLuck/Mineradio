@@ -1333,7 +1333,7 @@
             <label class="smart-ai-add-editor" hidden><span>场景</span><input id="smart-ai-scene-input" type="text" maxlength="10" autocomplete="off" aria-label="自定义场景标签，最多10个字" placeholder="输入标签" oninput="limitSmartAiTagInput(this, event)" oncompositionend="limitSmartAiTagInput(this)" onkeydown="addSmartAiTagFromInput(event, 'scene')" onblur="closeSmartAiTagInput('scene')"></label>
           </span>
         </div>
-        <button id="smart-ai-analysis-status" type="button" class="smart-ai-settings" onclick="retrySmartFavoriteAnalysis()" aria-live="polite" title="重新编码当前歌单">MuQ 音频编码待开始</button>
+        <button id="smart-ai-analysis-status" type="button" class="smart-ai-settings" onclick="toggleSmartFavoriteAnalysis()" aria-live="polite" title="暂停 MuQ 编码">MuQ 音频编码待开始 · 点击暂停</button>
         <div id="smart-ai-recommend-list" class="smart-ai-recommend-list" aria-label="MuQ 推荐播放列表" onclick="var item=event.target.closest('[data-muq-index]');if(item)playSmartAiRecommendation(item.getAttribute('data-muq-index'))"></div>
       </div>
       <div id="progress-bar">

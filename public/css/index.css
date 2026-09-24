@@ -19550,6 +19550,7 @@ body.desktop-shell.desktop-wallpaper-mode.diy-mode #bottom-bar.stage-mode {
 #ai-play-mode-btn { font-size:12px; font-weight:700; width:34px; flex-shrink:0; }
 #ai-play-mode-btn.active { color:var(--accent,#b6ffdf); background:rgba(255,255,255,.12); }
 #smart-ai-analysis-status { width:auto; height:auto; min-width:100px; max-width:240px; font-size:11px; line-height:1.5; white-space:normal; flex:0 1 auto; }
+#smart-ai-analysis-status[data-paused="true"] { color:rgba(var(--fc-accent-rgb),.95); background:rgba(var(--fc-accent-rgb),.12); box-shadow:inset 0 0 0 1px rgba(var(--fc-accent-rgb),.32); }
 .smart-ai-control-bar { flex-wrap:wrap; align-items:center; }
 .smart-ai-control-bar .smart-ai-tags { min-width:160px; flex:1 1 300px; }
 .smart-ai-tag[data-kind="scene"] span::before { content:'场景·'; opacity:.5; font-size:9px; }

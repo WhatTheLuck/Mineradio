@@ -1,31 +1,32 @@
-# Mineradio 2.3.1 发布流程
+# Mineradio 2.3.3 发布流程
 
 ## 发布边界
 
-- 正式版本：`2.3.1`
-- Git tag：`v2.3.1`
-- Release 标题：`Mineradio 2.3.1`
-- 安装包：`Mineradio-2.3.1-Setup.exe`
+- 正式版本：`2.3.3`
+- Git tag：`v2.3.3`
+- Release 标题：`Mineradio 2.3.3`
+- 安装包：`Mineradio-2.3.3-Setup.exe`
 - 仅从当前可信源码完整构建，不复用旧安装包或旧 `dist/`。
 - 正式 Release 不混入 Mineradio_Beat 产物。
 - GitHub Release 只附带完整安装包和最小版本说明 `latest.yml`；不上传 blockmap、构建清单或内部测试产物。
 
 ## 公开更新说明
 
-- 随安装包提供 28 首本地 MP3，首次启动加入“本地音乐”歌单，断网时仍可播放。
-- CyberRibbon、SpaceVenom 与 EmoMusic 使用最新保存预设对应的软件默认参数；用户保存的更新预设仍优先加载。
+- 本地歌曲自动采用 MR 节奏分析，不再弹出模式选择窗口。
+- EmoMusic 增加摄像头切换与人脸识别恢复提示。
+- MuQ 文本编码异常自动重试一次。
 
 ## 下载入口
 
-- GitHub Release：[下载 Mineradio 2.3.1](https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.1)
+- GitHub Release：[下载 Mineradio 2.3.3](https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.3)
 
-<!-- mineradio-download-page: GitHub Release|https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.1 -->
+<!-- mineradio-download-page: GitHub Release|https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.3 -->
 
 ## 发布资产
 
-GitHub Release 上传 `dist/Mineradio-2.3.1-Setup.exe` 和 `docs/update/latest.yml`。版本说明仅包含 `version/releaseDate`，不得使用带安装包下载字段的构建工具清单。
+GitHub Release 上传 `dist/Mineradio-2.3.3-Setup.exe` 和 `docs/update/latest.yml`。版本说明仅包含 `version/releaseDate`，不得使用带安装包下载字段的构建工具清单。
 
-安装包 SHA-256：`d444fa69e39af5c6f5d2564e8961340bb5f8f38fd19e51bb7a129ddab3ad2c9e`。
+安装包 SHA-256：`f5afb9b1ea9b3f9d33da395ea931355c68ab2affb8202ad5dfd7e3cb3d009086`。
 
 ## 发布前检查
 

@@ -127,7 +127,16 @@ class MuqRecommendation {
       const tag = textForTag(raw);
       if (!tag.value || !tag.text) continue;
       const key = `${tag.kind}:${tag.text}`;
-      if (!this.cache.text[key]) { this.cache.text[key] = { vector: await this.request('text', { text: tag.text }), at: Date.now() }; this.save(); }
+      if (!this.cache.text[key]) {
+        let vector;
+        try { vector = await this.request('text', { text: tag.text }); }
+        catch (error) {
+          if (!/TextEncodeInput|TextinputSequence/i.test(String(error && error.message))) throw error;
+          vector = await this.request('text', { text: tag.text });
+        }
+        this.cache.text[key] = { vector, at: Date.now() };
+        this.save();
+      }
       vectors[tag.value] = this.cache.text[key].vector;
     }
     return vectors;

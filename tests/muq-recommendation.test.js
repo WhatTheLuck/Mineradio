@@ -3,7 +3,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { textForTag, cosine, rankTracks, CACHE_VERSION } = require('../desktop/muq-recommendation');
+const { MuqRecommendation, textForTag, cosine, rankTracks, CACHE_VERSION } = require('../desktop/muq-recommendation');
 
 assert.strictEqual(textForTag({ value: 'driving', label: '开车', kind: 'scene' }).text, '适合在开车时听的音乐');
 assert.strictEqual(textForTag({ value: 'rock', label: '摇滚', kind: 'style' }).text, '摇滚');
@@ -35,4 +35,17 @@ Object.assign(renderer.smartMuqAudioVectors, audio);
 Object.assign(renderer.smartMuqTextVectors, text);
 const renderedOrder = Array.from(renderer.smartMuqRank(), row => row.track.key);
 assert.deepStrictEqual(renderedOrder, results.map(row => row.key), 'renderer and main ranking agree');
-console.log('MuQ ranking tests passed');
+(async () => {
+  const client = Object.create(MuqRecommendation.prototype);
+  client.cache = { text: {} };
+  client.save = () => {};
+  let attempts = 0;
+  client.request = async (_kind, payload) => {
+    assert.strictEqual(payload.text, '适合在学习时听的音乐');
+    if (++attempts === 1) throw new Error('TextEncodeInput must be Union[TextInputSequence, Tuple[InputSequence, InputSequence]]');
+    return [1, 0];
+  };
+  assert.deepStrictEqual(await client.texts([{ value: 'study', label: '学习', kind: 'scene' }]), { study: [1, 0] });
+  assert.strictEqual(attempts, 2, 'transient tokenizer rejection is retried once');
+  console.log('MuQ ranking tests passed');
+})().catch(error => { console.error(error); process.exitCode = 1; });

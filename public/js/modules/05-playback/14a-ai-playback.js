@@ -243,7 +243,8 @@ function renderSmartAiControlBar() {
   if (!bar) return;
   var tags = document.getElementById('smart-ai-tags');
   if (tags) {
-    tags.innerHTML = (smartFavoritesState.tags || []).map(smartAiTagButtonHtml).join('');
+    var tagItems = document.getElementById('smart-ai-tag-items');
+    if (tagItems) tagItems.innerHTML = (smartFavoritesState.tags || []).map(smartAiTagButtonHtml).join('');
     tags.querySelectorAll('[data-smart-ai-tag]').forEach(function (button) {
       button.addEventListener('click', function () { cycleSmartAiTag(button.getAttribute('data-smart-ai-tag')); });
       button.addEventListener('contextmenu', function (event) {
@@ -307,21 +308,54 @@ function cycleSmartAiTag(value) {
   smartMuqEnsureTexts().then(renderSmartAiPlaylist).catch(function (error) { smartAiAnalysisStatus(error.message); });
 }
 
-function addSmartAiTagFromInput(event) {
-  if (event && event.key !== 'Enter') return;
-  if (event) event.preventDefault();
-  var input = document.getElementById('smart-ai-tag-input');
+function openSmartAiTagInput(kind) {
+  if (kind !== 'style' && kind !== 'scene') return;
+  closeSmartAiTagInput(kind === 'style' ? 'scene' : 'style');
+  var shell = document.getElementById('smart-ai-add-' + kind);
+  if (!shell) return;
+  var trigger = shell.querySelector('.smart-ai-add-trigger');
+  var editor = shell.querySelector('.smart-ai-add-editor');
+  trigger.hidden = true;
+  trigger.setAttribute('aria-expanded', 'true');
+  editor.hidden = false;
+  editor.querySelector('input').focus();
+}
+
+function closeSmartAiTagInput(kind, restoreFocus) {
+  var shell = document.getElementById('smart-ai-add-' + kind);
+  if (!shell) return;
+  var trigger = shell.querySelector('.smart-ai-add-trigger');
+  var editor = shell.querySelector('.smart-ai-add-editor');
+  editor.hidden = true;
+  editor.querySelector('input').value = '';
+  trigger.hidden = false;
+  trigger.setAttribute('aria-expanded', 'false');
+  if (restoreFocus) trigger.focus();
+}
+
+function limitSmartAiTagInput(input, event) {
+  if (input && !(event && event.isComposing)) input.value = Array.from(input.value).slice(0, 10).join('');
+}
+
+function addSmartAiTagFromInput(event, kind) {
+  if (!event || event.isComposing || event.keyCode === 229) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeSmartAiTagInput(kind, true);
+    return;
+  }
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  var input = document.getElementById('smart-ai-' + kind + '-input');
   if (!input) return;
-  var label = String(input.value || '').trim().replace(/^#+/, '').slice(0, 32);
+  var label = Array.from(String(input.value || '').trim().replace(/^#+/, '')).slice(0, 10).join('');
   var value = normalizeAiTag(label);
-  var kindSelect = document.getElementById('smart-ai-tag-kind');
-  var kind = kindSelect && kindSelect.value === 'scene' ? 'scene' : 'style';
   if (!label || !value) return;
   var existing = smartFavoritesState.tags.find(function (tag) { return tag.value === value; });
   if (existing) existing.state = existing.state === 'neutral' ? 'preferred' : existing.state;
   else smartFavoritesState.tags.push({ label: label, value: value, kind: kind, state: 'preferred', preset: false });
   smartFavoritesState.deletedTags = uniqueAiTags(smartFavoritesState.deletedTags || []).filter(function (tag) { return tag !== value; });
-  input.value = '';
+  closeSmartAiTagInput(kind, true);
   saveSmartFavoritesState('new-tag', true);
   renderSmartAiControlBar();
   prefetchSmartAiOnlineCandidates();

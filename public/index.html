@@ -1322,14 +1322,19 @@
       </div>
       <div id="smart-ai-control-bar" class="smart-ai-control-bar" hidden aria-hidden="true" aria-label="AI 播放条件">
         <span class="smart-ai-scope">当前歌单 · AI 推荐</span>
-        <div id="smart-ai-tags" class="smart-ai-tags" aria-label="推荐标签"></div>
+        <div id="smart-ai-tags" class="smart-ai-tags" aria-label="推荐标签">
+          <span id="smart-ai-tag-items" class="smart-ai-tag-items"></span>
+          <span id="smart-ai-add-style" class="smart-ai-add-tag" data-kind="style">
+            <button type="button" class="smart-ai-add-trigger" aria-label="添加风格标签" aria-expanded="false" onclick="openSmartAiTagInput('style')"><span>风格</span><b aria-hidden="true">＋</b></button>
+            <label class="smart-ai-add-editor" hidden><span>风格</span><input id="smart-ai-style-input" type="text" maxlength="10" autocomplete="off" aria-label="自定义风格标签，最多10个字" placeholder="输入标签" oninput="limitSmartAiTagInput(this, event)" oncompositionend="limitSmartAiTagInput(this)" onkeydown="addSmartAiTagFromInput(event, 'style')" onblur="closeSmartAiTagInput('style')"></label>
+          </span>
+          <span id="smart-ai-add-scene" class="smart-ai-add-tag" data-kind="scene">
+            <button type="button" class="smart-ai-add-trigger" aria-label="添加场景标签" aria-expanded="false" onclick="openSmartAiTagInput('scene')"><span>场景</span><b aria-hidden="true">＋</b></button>
+            <label class="smart-ai-add-editor" hidden><span>场景</span><input id="smart-ai-scene-input" type="text" maxlength="10" autocomplete="off" aria-label="自定义场景标签，最多10个字" placeholder="输入标签" oninput="limitSmartAiTagInput(this, event)" oncompositionend="limitSmartAiTagInput(this)" onkeydown="addSmartAiTagFromInput(event, 'scene')" onblur="closeSmartAiTagInput('scene')"></label>
+          </span>
+        </div>
         <button id="smart-ai-analysis-status" type="button" class="smart-ai-settings" onclick="retrySmartFavoriteAnalysis()" aria-live="polite" title="重新编码当前歌单">MuQ 音频编码待开始</button>
         <div id="smart-ai-recommend-list" class="smart-ai-recommend-list" aria-label="MuQ 推荐播放列表" onclick="var item=event.target.closest('[data-muq-index]');if(item)playSmartAiRecommendation(item.getAttribute('data-muq-index'))"></div>
-        <div class="smart-ai-input-shell">
-          <select id="smart-ai-tag-kind" aria-label="新标签类别"><option value="style">风格</option><option value="scene">场景</option></select>
-          <input id="smart-ai-tag-input" type="text" maxlength="32" autocomplete="off"
-            placeholder="输入现在想听什么…" aria-label="添加音乐推荐关键词" onkeydown="addSmartAiTagFromInput(event)">
-        </div>
       </div>
       <div id="progress-bar">
         <div id="progress-fill"></div>

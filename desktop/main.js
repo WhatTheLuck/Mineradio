@@ -153,10 +153,16 @@ const STABLE_USER_DATA_PATH = STARTUP_QA_USER_DATA_PATH || path.join(app.getPath
 fs.mkdirSync(STABLE_USER_DATA_PATH, { recursive: true });
 app.setPath('userData', STABLE_USER_DATA_PATH);
 const smartFavoritesStore = new SmartFavoritesStore({ userDataPath: STABLE_USER_DATA_PATH, safeStorage });
+const devMuqBundleRoot = path.join(__dirname, '..', 'build', 'muq-placeholder-bundle');
+const devMuqBundleWorker = path.join(devMuqBundleRoot, 'muq-worker.exe');
+const devMuqBuildWorker = path.join(__dirname, '..', 'build', 'muq-pyinstaller', 'muq-worker', 'muq-worker.exe');
+const devMuqWorker = fs.existsSync(devMuqBuildWorker) &&
+  (!fs.existsSync(devMuqBundleWorker) || fs.statSync(devMuqBuildWorker).mtimeMs > fs.statSync(devMuqBundleWorker).mtimeMs)
+  ? devMuqBuildWorker : devMuqBundleWorker;
 const muqRecommendation = new MuqRecommendation({
   userDataPath: STABLE_USER_DATA_PATH,
-  runtimePath: app.isPackaged ? path.join(process.resourcesPath, 'muq-runtime', 'muq-worker.exe') : path.join(__dirname, '..', 'build', 'muq-placeholder-bundle', 'muq-worker.exe'),
-  modelPath: app.isPackaged ? path.join(process.resourcesPath, 'muq-runtime', 'model') : path.join(__dirname, '..', 'build', 'muq-placeholder-bundle', 'model'),
+  runtimePath: app.isPackaged ? path.join(process.resourcesPath, 'muq-runtime', 'muq-worker.exe') : devMuqWorker,
+  modelPath: app.isPackaged ? path.join(process.resourcesPath, 'muq-runtime', 'model') : path.join(devMuqBundleRoot, 'model'),
 });
 const emomusicVlmClient = new EmomusicVlmClient({ credentialProvider: () => smartFavoritesStore.readCredential() });
 const INITIAL_CACHE_SETTINGS = ensureCacheDirectories(readCacheSettings());

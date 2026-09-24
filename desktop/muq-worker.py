@@ -2,6 +2,7 @@
 import base64
 import json
 import os
+import re
 import sys
 from pathlib import Path
 import shutil
@@ -15,6 +16,11 @@ from safetensors import safe_open
 from safetensors.torch import load_file, save_file
 from muq import MuQMuLan
 from transformers import AutoTokenizer
+
+
+def valid_text(value):
+    # SentencePiece cannot convert unpaired UTF-16 surrogates to UTF-8.
+    return re.sub('[\ud800-\udfff]', '\ufffd', str(value))[:200]
 
 
 def expand_weights(source, target):
@@ -100,7 +106,7 @@ def main():
                         raise ValueError('INVALID_AUDIO_SAMPLE')
                     vector = model(wavs=torch.from_numpy(pcm).unsqueeze(0))
                 elif request['kind'] == 'text':
-                    value = str(request['text'])[:200]
+                    value = valid_text(request['text'])
                     if not value:
                         raise ValueError('EMPTY_TEXT')
                     try:

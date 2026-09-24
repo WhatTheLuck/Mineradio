@@ -7,6 +7,7 @@ const { MuqRecommendation, textForTag, cosine, rankTracks, CACHE_VERSION } = req
 
 assert.strictEqual(textForTag({ value: 'driving', label: '开车', kind: 'scene' }).text, '适合在开车时听的音乐');
 assert.strictEqual(textForTag({ value: 'rock', label: '摇滚', kind: 'style' }).text, '摇滚');
+assert.strictEqual(textForTag({ value: 'emoji', label: 'a'.repeat(79) + '🎵', kind: 'style' }).text, 'a'.repeat(79) + '🎵');
 assert.strictEqual(cosine([1, 0], [0, 1]), 0);
 assert.strictEqual(cosine([1, 0], [1, 0]), 1);
 assert.ok(CACHE_VERSION.includes('24k'));

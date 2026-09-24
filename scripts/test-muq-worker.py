@@ -24,10 +24,11 @@ requests = [
     {'id': 3, 'kind': 'text', 'text': '摇滚'},
     {'id': 4, 'kind': 'text', 'text': '适合在学习时听的音乐'},
     {'id': 5, 'kind': 'text', 'text': 'Calm electronic music for a night drive'},
+    {'id': 6, 'kind': 'text', 'text': '摇滚\ud800'},
 ]
 try:
     for request in requests:
-        process.stdin.write(json.dumps(request, ensure_ascii=False) + '\n')
+        process.stdin.write(json.dumps(request, ensure_ascii=True) + '\n')
         process.stdin.flush()
         while True:
             line = process.stdout.readline()

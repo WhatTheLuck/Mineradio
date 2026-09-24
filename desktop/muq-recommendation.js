@@ -9,9 +9,9 @@ const CACHE_VERSION = 'muq-mulan-large:fp16-placeholder:24k:middle-third:10s:v6'
 const SCENES = new Set(['学习', '开车', '工作', '运动', '跑步', '睡眠', '通勤', '做饭', '阅读', '冥想', '旅行', '聚会', '夜晚', 'study', 'driving', 'work', 'workout', 'sleep', 'commute', 'night']);
 
 function textForTag(tag) {
-  const label = String(tag && (tag.label || tag.value) || '').trim().slice(0, 80);
+  const label = Array.from(String(tag && (tag.label || tag.value) || '').trim()).slice(0, 80).join('');
   const kind = tag && (tag.kind === 'scene' || tag.kind === 'style') ? tag.kind : (SCENES.has(label.toLowerCase()) ? 'scene' : 'style');
-  return { value: String(tag && tag.value || label).slice(0, 80), kind, text: kind === 'scene' ? `适合在${label}时听的音乐` : label };
+  return { value: Array.from(String(tag && tag.value || label)).slice(0, 80).join(''), kind, text: kind === 'scene' ? `适合在${label}时听的音乐` : label };
 }
 
 function cosine(a, b) {

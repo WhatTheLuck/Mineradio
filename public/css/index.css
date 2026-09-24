@@ -19530,13 +19530,80 @@ body.desktop-shell.desktop-wallpaper-mode.diy-mode #bottom-bar.stage-mode {
 .smart-ai-input-shell #smart-ai-tag-kind { width:50px; flex:0 0 50px; padding:0 2px; border:0; background:transparent; color:inherit; font:10px var(--font-sans); }
 .smart-ai-input-shell #smart-ai-tag-kind option { background:#181d25; }
 .smart-ai-tag[data-kind="scene"] span::before { content:'场景·'; opacity:.5; font-size:9px; }
-.smart-ai-recommend-list { display:flex; width:100%; gap:5px; overflow-x:auto; scrollbar-width:thin; }
-.smart-ai-recommend-list button { display:flex; align-items:center; gap:7px; min-width:130px; max-width:230px; height:29px; padding:0 8px; border:1px solid rgba(255,255,255,.13); border-radius:7px; background:rgba(255,255,255,.055); color:inherit; cursor:pointer; font:11px var(--font-sans); }
-.smart-ai-recommend-list button:hover { border-color:rgba(var(--fc-accent-rgb),.6); }
-.smart-ai-recommend-list button b { color:rgba(var(--fc-accent-rgb),.85); }
-.smart-ai-recommend-list button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.smart-ai-recommend-list button small { margin-left:auto; opacity:.65; }
-.smart-ai-recommend-empty { font-size:11px; opacity:.65; }
+.smart-ai-recommend-list {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  gap: 7px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 1px 7px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--fc-accent-rgb), .32) transparent;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-inline: contain;
+}
+.smart-ai-recommend-list::-webkit-scrollbar { height: 4px; }
+.smart-ai-recommend-list::-webkit-scrollbar-track { background: transparent; }
+.smart-ai-recommend-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(var(--fc-accent-rgb), .32);
+}
+.smart-ai-recommend-list:hover::-webkit-scrollbar-thumb { background: rgba(var(--fc-accent-rgb), .52); }
+.smart-ai-recommend-list button {
+  display: flex;
+  flex: 0 0 clamp(164px, 20vw, 216px);
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  height: 37px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .045);
+  color: rgba(255, 255, 255, .88);
+  cursor: pointer;
+  font: 500 11px/1 var(--font-sans);
+  text-align: left;
+  scroll-snap-align: start;
+  transition: color .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.smart-ai-recommend-list button:hover,
+.smart-ai-recommend-list button:focus-visible {
+  border-color: rgba(var(--fc-accent-rgb), .44);
+  background: rgba(var(--fc-accent-rgb), .10);
+  color: #fff;
+}
+.smart-ai-recommend-list button:focus-visible {
+  outline: 2px solid rgba(var(--fc-accent-rgb), .72);
+  outline-offset: 1px;
+}
+.smart-ai-recommend-list button:active { background: rgba(var(--fc-accent-rgb), .17); }
+.smart-ai-recommend-list button b {
+  flex: 0 0 17px;
+  color: rgba(var(--fc-accent-rgb), .72);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.smart-ai-recommend-list button span {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.smart-ai-recommend-list button small {
+  flex: 0 0 auto;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(var(--fc-accent-rgb), .10);
+  color: rgba(var(--fc-accent-rgb), .86);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.smart-ai-recommend-empty { padding: 9px 4px; color: rgba(255, 255, 255, .6); font-size: 11px; }
 .external-visual-column input[type=range] { accent-color:var(--accent,#a9c4ba); }
 .external-visual-column input[type=checkbox] { accent-color:var(--accent,#a9c4ba); }
 #smart-favorites-modal:not(.llm-settings-mode) #smart-favorites-llm-settings { display:none; }

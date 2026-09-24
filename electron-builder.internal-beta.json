@@ -6,6 +6,7 @@
     "buildResources": "build"
   },
   "afterPack": "build/after-pack.js",
+  "beforePack": "build/check-muq-runtime.js",
   "toolsets": {
     "winCodeSign": "1.1.0"
   },
@@ -30,6 +31,14 @@
     "desktop/**/*",
     "public/**/*",
     "build/**/*",
+    "!build/muq-runtime/**/*",
+    "!build/muq-bundle/**/*",
+    "!build/muq-q8-bundle/**/*",
+    "!build/muq-hybrid-bundle/**/*",
+    "!build/muq-main-half-bundle/**/*",
+    "!build/muq-placeholder-bundle/**/*",
+    "!build/.muq-venv/**/*",
+    "!build/muq-pyinstaller/**/*",
     "cuefield/**/*",
     "server.js",
     "*-api.js",
@@ -41,6 +50,9 @@
     "package.json",
     "!public/index.*.html",
     "public/index.html"
+  ],
+  "extraResources": [
+    { "from": "build/muq-placeholder-bundle", "to": "muq-runtime" }
   ],
   "asar": true,
   "win": {

@@ -1,7 +1,7 @@
 {
   "name": "mineradio",
   "productName": "Mineradio",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Windows 沉浸式音乐播放器，融合桌面模式、歌词舞台、粒子视觉和 3D 歌单架。",
   "author": "Mineradio",
   "license": "GPL-3.0-only",
@@ -21,6 +21,7 @@
       "buildResources": "build"
     },
     "afterPack": "build/after-pack.js",
+    "beforePack": "build/check-muq-runtime.js",
     "toolsets": {
       "winCodeSign": "1.1.0"
     },
@@ -29,6 +30,14 @@
       "music/**/*",
       "public/**/*",
       "build/**/*",
+      "!build/muq-runtime/**/*",
+      "!build/muq-bundle/**/*",
+      "!build/muq-q8-bundle/**/*",
+      "!build/muq-hybrid-bundle/**/*",
+      "!build/muq-main-half-bundle/**/*",
+      "!build/muq-placeholder-bundle/**/*",
+      "!build/.muq-venv/**/*",
+      "!build/muq-pyinstaller/**/*",
       "cuefield/**/*",
       "server.js",
       "*-api.js",
@@ -45,6 +54,12 @@
       "!public/wallpaper.html",
       "!public/index.*.html",
       "public/index.html"
+    ],
+    "extraResources": [
+      {
+        "from": "build/muq-placeholder-bundle",
+        "to": "muq-runtime"
+      }
     ],
     "asar": false,
     "win": {

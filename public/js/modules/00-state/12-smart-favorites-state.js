@@ -26,7 +26,7 @@ function smartFavoritesDefaultState() {
     version: 1,
     sources: [],
     tracks: [],
-    tags: SMART_FAVORITES_DEFAULT_TAGS.map(function (label) { return { label: label, value: normalizeAiTag(label), state: 'neutral', preset: true }; }),
+    tags: SMART_FAVORITES_DEFAULT_TAGS.map(function (label) { return { label: label, value: normalizeAiTag(label), kind: /^(学习|开车|工作|运动|夜晚)$/.test(label) ? 'scene' : 'style', state: 'neutral', preset: true }; }),
     deletedTags: [],
     scope: 'private',
     history: [],
@@ -177,11 +177,11 @@ function sanitizeSmartFavoritesState(raw) {
     if (!tag) return null;
     var label = String(tag.label || tag.value || '').trim().slice(0, 32);
     var value = normalizeAiTag(tag.value || label);
-    return label && value ? { label: label, value: value, state: normalizeAiTagState(tag.state), preset: !!tag.preset } : null;
+    return label && value ? { label: label, value: value, kind: tag.kind === 'scene' || !tag.kind && /^(study|driving|work|workout|sleep|commute|night)$/.test(value) ? 'scene' : 'style', state: normalizeAiTagState(tag.state), preset: !!tag.preset } : null;
   }).filter(function (tag) { return tag && deletedTags.indexOf(tag.value) < 0; }) : [];
   SMART_FAVORITES_DEFAULT_TAGS.slice().reverse().forEach(function (label) {
     var value = normalizeAiTag(label);
-    if (deletedTags.indexOf(value) < 0 && !tags.some(function (tag) { return tag.value === value; })) tags.unshift({ label: label, value: value, state: 'neutral', preset: true });
+    if (deletedTags.indexOf(value) < 0 && !tags.some(function (tag) { return tag.value === value; })) tags.unshift({ label: label, value: value, kind: /^(study|driving|work|workout|night)$/.test(value) ? 'scene' : 'style', state: 'neutral', preset: true });
   });
   return {
     version: 1,

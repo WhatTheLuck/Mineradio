@@ -20,6 +20,10 @@ Mineradio 使用了以下第三方项目或服务。各项目版权归其原作�
 
 ## Third-party Services
 
+## MuQ-MuLan recommendation model
+
+MuQ source code is MIT licensed. The bundled `OpenMuQ/MuQ-MuLan-large` and `OpenMuQ/MuQ-large-msd-iter` weights are CC BY-NC 4.0 licensed and are attributed to Haina Zhu et al., “MuQ: Self-Supervised Music Representation Learning with Mel Residual Vector Quantization” (2025), https://github.com/tencent-ailab/MuQ. The text backbone is `xlm-roberta-base` from Meta AI. The model runs locally for music and text embeddings; the source audio is not sent to an LLM for AI playback. Commercial distribution requires separate permission for the noncommercial MuQ weights.
+
 Mineradio 可能与网易云音乐、QQ 音乐等第三方音乐服务进行用户自有账号相关的本地客户端交互。
 
 Mineradio 不是任何音乐平台的官方客户端，也不隶属于网易云音乐、QQ 音乐或腾讯音乐娱乐集团。请用户自行遵守对应平台的服务协议、版权规则和会员权益规则。

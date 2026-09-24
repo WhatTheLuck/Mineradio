@@ -18,6 +18,7 @@ const { BuiltInPlaylistLibrary } = require('./built-in-playlist-library');
 const { syncBundledMusic } = require('./bundled-music');
 const { VisualPresetStore } = require('./visual-preset-store');
 const { SmartFavoritesStore } = require('./smart-favorites-store');
+const { MuqRecommendation } = require('./muq-recommendation');
 const { EmomusicVlmClient } = require('./emomusic-vlm-client');
 const { WallpaperEngineRuntime } = require('./wallpaper-engine-runtime');
 const { FullDesktopModeRuntime } = require('./full-desktop-mode-runtime');
@@ -152,6 +153,11 @@ const STABLE_USER_DATA_PATH = STARTUP_QA_USER_DATA_PATH || path.join(app.getPath
 fs.mkdirSync(STABLE_USER_DATA_PATH, { recursive: true });
 app.setPath('userData', STABLE_USER_DATA_PATH);
 const smartFavoritesStore = new SmartFavoritesStore({ userDataPath: STABLE_USER_DATA_PATH, safeStorage });
+const muqRecommendation = new MuqRecommendation({
+  userDataPath: STABLE_USER_DATA_PATH,
+  runtimePath: app.isPackaged ? path.join(process.resourcesPath, 'muq-runtime', 'muq-worker.exe') : path.join(__dirname, '..', 'build', 'muq-placeholder-bundle', 'muq-worker.exe'),
+  modelPath: app.isPackaged ? path.join(process.resourcesPath, 'muq-runtime', 'model') : path.join(__dirname, '..', 'build', 'muq-placeholder-bundle', 'model'),
+});
 const emomusicVlmClient = new EmomusicVlmClient({ credentialProvider: () => smartFavoritesStore.readCredential() });
 const INITIAL_CACHE_SETTINGS = ensureCacheDirectories(readCacheSettings());
 const loginEasterEggGate = new LoginEasterEggGate({
@@ -4626,6 +4632,25 @@ ipcMain.handle('mineradio-smart-favorites-llm-test', async (event) => {
 ipcMain.handle('mineradio-smart-favorites-analyze', async (event, tracks, tags) => {
   if (!isTrustedMainWindowIpc(event)) return { ok: false, available: false, results: [], error: 'UNTRUSTED_SENDER' };
   return smartFavoritesStore.analyzeTracks(tracks, tags);
+});
+
+ipcMain.handle('mineradio-muq-status', async event => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, error: 'UNTRUSTED_SENDER' };
+  return muqRecommendation.status();
+});
+ipcMain.handle('mineradio-muq-audio-cache', async (event, keys) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, error: 'UNTRUSTED_SENDER' };
+  return { ok: true, entries: muqRecommendation.audioCache(Array.isArray(keys) ? keys.map(String) : []) };
+});
+ipcMain.handle('mineradio-muq-embed-audio', async (event, key, fingerprint, pcm) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, error: 'UNTRUSTED_SENDER' };
+  try { return { ok: true, vector: await muqRecommendation.audio(String(key || ''), String(fingerprint || ''), pcm) }; }
+  catch (error) { return { ok: false, error: error.message }; }
+});
+ipcMain.handle('mineradio-muq-embed-texts', async (event, tags) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, error: 'UNTRUSTED_SENDER' };
+  try { return { ok: true, vectors: await muqRecommendation.texts(Array.isArray(tags) ? tags : []) }; }
+  catch (error) { return { ok: false, error: error.message }; }
 });
 
 ipcMain.handle('mineradio-emomusic-vlm-status', async (event) => {

@@ -4,15 +4,129 @@ var smartAiOnlineRequest = null;
 var smartAiDraggingTag = '';
 var smartAiNextRequest = null;
 var smartAiBasePlayMode = 'loop';
+var smartMuqAudioVectors = Object.create(null);
+var smartMuqAudioFingerprints = Object.create(null);
+var smartMuqTextVectors = Object.create(null);
+var smartMuqTextRequest = null;
+
+function smartMuqFingerprint(track) {
+  return ['muq-mulan-large:fp16-placeholder:24k:middle-third:10s:v6', smartTrackKey(track), smartTrackDurationSeconds(track), track.localUrl || ''].join('|');
+}
+
+async function smartMuqEmbedTrack(track, fingerprint) {
+  var bridge = smartFavoritesBridge();
+  var url = track.localUrl || '';
+  if (!url) {
+    var resolved = await resolveAlbumGaplessPlaybackData(track);
+    if (!resolved || !resolved.url || resolved.trial) throw new Error('没有可采样的完整音频');
+    url = '/api/audio?url=' + encodeURIComponent(resolved.url);
+  }
+  var response = await fetch(url);
+  if (!response.ok) throw new Error('音频读取失败 '+response.status);
+  var encoded = await response.arrayBuffer();
+  var decodeContext = new (window.AudioContext || window.webkitAudioContext)();
+  var decoded;
+  try { decoded = await decodeContext.decodeAudioData(encoded); }
+  finally { await decodeContext.close(); }
+  var seconds = Math.min(10, decoded.duration);
+  if (!isFinite(seconds) || seconds < 1) throw new Error('音频太短');
+  var start = Math.max(0, Math.min(decoded.duration - seconds, decoded.duration / 3));
+  var frames = Math.max(24000, Math.round(seconds * 24000));
+  var offline = new OfflineAudioContext(1, frames, 24000);
+  var source = offline.createBufferSource();
+  source.buffer = decoded;
+  source.connect(offline.destination);
+  source.start(0, start, seconds);
+  var sample = await offline.startRendering();
+  var pcm = sample.getChannelData(0);
+  var result = await bridge.embedMuqAudio(smartTrackKey(track), fingerprint, pcm);
+  if (!result || !result.ok) throw new Error(result && result.error || 'MuQ 音频编码失败');
+  return result.vector;
+}
+
+function smartMuqTags() {
+  return (smartFavoritesState.tags || []).filter(function (tag) { return tag.state !== 'neutral'; }).map(function (tag) {
+    return { value: tag.value, label: tag.label, kind: tag.kind || (/^(study|driving|work|workout|sleep|commute|night)$/.test(tag.value) ? 'scene' : 'style'), state: tag.state };
+  });
+}
+
+function smartMuqAllTags() {
+  return (smartFavoritesState.tags || []).map(function (tag) {
+    return { value: tag.value, label: tag.label, kind: tag.kind || (/^(study|driving|work|workout|sleep|commute|night)$/.test(tag.value) ? 'scene' : 'style') };
+  });
+}
+
+async function smartMuqEnsureTexts() {
+  if (smartMuqTextRequest) return smartMuqTextRequest;
+  var tags = smartMuqAllTags();
+  if (!tags.length) return;
+  smartMuqTextRequest = smartFavoritesBridge().embedMuqTexts(tags).then(function (result) {
+    if (!result || !result.ok) throw new Error(result && result.error || 'MuQ 文本编码失败');
+    Object.assign(smartMuqTextVectors, result.vectors);
+  }).finally(function () { smartMuqTextRequest = null; });
+  return smartMuqTextRequest;
+}
+
+function smartMuqCosine(a, b) {
+  if (!a || !b || a.length !== b.length) return NaN;
+  var sum = 0, aa = 0, bb = 0;
+  for (var i = 0; i < a.length; i++) { sum += a[i] * b[i]; aa += a[i] * a[i]; bb += b[i] * b[i]; }
+  return aa && bb ? sum / Math.sqrt(aa * bb) : NaN;
+}
+
+function smartMuqRank() {
+  var tags = smartMuqTags();
+  var required = tags.filter(function (tag) { return tag.state === 'required'; });
+  var rows = (playQueue || []).map(function (track, index) {
+    var audioVector = smartMuqAudioVectors[smartTrackKey(track)];
+    if (!audioVector) return null;
+    var matches = Object.create(null);
+    for (var i = 0; i < tags.length; i++) {
+      var match = smartMuqCosine(audioVector, smartMuqTextVectors[tags[i].value]);
+      if (!isFinite(match)) return null;
+      matches[tags[i].value] = match;
+    }
+    return { track: track, index: index, matches: matches };
+  }).filter(Boolean);
+  var floors = Object.create(null);
+  required.forEach(function (tag) {
+    var values = rows.map(function (row) { return row.matches[tag.value]; }).sort(function (a, b) { return b - a; });
+    floors[tag.value] = values[Math.min(values.length - 1, Math.max(0, Math.ceil(values.length * .35) - 1))];
+  });
+  return rows.filter(function (row) {
+    return required.every(function (tag) { return row.matches[tag.value] >= floors[tag.value]; });
+  }).map(function (row) {
+    var weights = tags.reduce(function (sum, tag) { return sum + (tag.state === 'required' ? 1.5 : 1); }, 0);
+    var affinity = weights ? tags.reduce(function (sum, tag) { return sum + row.matches[tag.value] * (tag.state === 'required' ? 1.5 : 1); }, 0) / weights : 0;
+    var history = smartFavoritesState.history || [];
+    var last = history.lastIndexOf(smartTrackKey(row.track));
+    row.score = affinity - (last < 0 ? 0 : .08 / (history.length - last));
+    return row;
+  }).sort(function (a, b) { return b.score - a.score; });
+}
+
+function renderSmartAiPlaylist() {
+  var root = document.getElementById('smart-ai-recommend-list');
+  if (!root) return;
+  var rows = smartMuqRank().filter(function (row) { return row.index !== currentIdx; }).slice(0, 12);
+  root.innerHTML = rows.map(function (row, index) {
+    return '<button type="button" data-muq-index="'+row.index+'"><b>'+(index+1)+'</b><span>'+escHtml(row.track.name || row.track.title || '未知歌曲')+'</span><small>'+Math.round(row.score*100)+'%</small></button>';
+  }).join('') || '<span class="smart-ai-recommend-empty">正在分析歌单音频…</span>';
+}
+
+function playSmartAiRecommendation(index) {
+  var track = playQueue[Number(index)];
+  if (track) playSmartAiSelection(track, true, 'next');
+}
 
 function smartAiTagStateLabel(state) {
-  return state === 'required' ? '必须符合' : (state === 'preferred' ? '可以符合' : '不选');
+  return state === 'required' ? '必须满足' : (state === 'preferred' ? '尽量满足' : '不选');
 }
 
 function smartAiTagButtonHtml(tag) {
   var state = normalizeAiTagState(tag.state);
-  return '<button type="button" draggable="true" class="smart-ai-tag" data-smart-ai-tag="' + escHtml(tag.value) + '" data-state="' + state + '" aria-label="' + escHtml(tag.label) + '，' + smartAiTagStateLabel(state) + '" title="点击切换筛选状态；右键删除；拖到当前播放栏可添加给歌曲">' +
-    '<span>' + escHtml(tag.label) + '</span><i aria-hidden="true">' + (state === 'required' ? '必须' : (state === 'preferred' ? '偏好' : '')) + '</i></button>';
+  return '<button type="button" draggable="true" class="smart-ai-tag" data-smart-ai-tag="' + escHtml(tag.value) + '" data-state="' + state + '" data-kind="' + (tag.kind === 'scene' ? 'scene' : 'style') + '" aria-label="' + escHtml(tag.label) + '，' + smartAiTagStateLabel(state) + '" title="点击切换筛选状态；右键删除；拖到当前播放栏可添加给歌曲">' +
+    '<span>' + escHtml(tag.label) + '</span><i aria-hidden="true">' + (state === 'required' ? '必须' : (state === 'preferred' ? '尽量' : '')) + '</i></button>';
 }
 
 function smartTagLabel(value) {
@@ -50,6 +164,7 @@ function removeCurrentSmartTag(value) {
   var song = currentIdx >= 0 && playQueue[currentIdx] || null;
   if (!song || !removeSmartTrackTag(song, value)) return;
   renderCurrentSmartTags();
+  renderSmartAiPlaylist();
   safeRenderQueuePanel('smart-tag-removed');
   showToast('已从当前歌曲移除标签“' + smartTagLabel(value) + '”');
 }
@@ -159,6 +274,7 @@ function cycleSmartAiTag(value) {
   renderSmartAiControlBar();
   if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('smart-filter-changed');
   prefetchSmartAiOnlineCandidates();
+  smartMuqEnsureTexts().then(renderSmartAiPlaylist).catch(function (error) { smartAiAnalysisStatus(error.message); });
 }
 
 function addSmartAiTagFromInput(event) {
@@ -168,15 +284,18 @@ function addSmartAiTagFromInput(event) {
   if (!input) return;
   var label = String(input.value || '').trim().replace(/^#+/, '').slice(0, 32);
   var value = normalizeAiTag(label);
+  var kindSelect = document.getElementById('smart-ai-tag-kind');
+  var kind = kindSelect && kindSelect.value === 'scene' ? 'scene' : 'style';
   if (!label || !value) return;
   var existing = smartFavoritesState.tags.find(function (tag) { return tag.value === value; });
   if (existing) existing.state = existing.state === 'neutral' ? 'preferred' : existing.state;
-  else smartFavoritesState.tags.push({ label: label, value: value, state: 'preferred', preset: false });
+  else smartFavoritesState.tags.push({ label: label, value: value, kind: kind, state: 'preferred', preset: false });
   smartFavoritesState.deletedTags = uniqueAiTags(smartFavoritesState.deletedTags || []).filter(function (tag) { return tag !== value; });
   input.value = '';
   saveSmartFavoritesState('new-tag', true);
   renderSmartAiControlBar();
   prefetchSmartAiOnlineCandidates();
+  smartMuqEnsureTexts().then(renderSmartAiPlaylist).catch(function (error) { smartAiAnalysisStatus(error.message); });
 }
 
 function setSmartAiScope(scope) {
@@ -280,7 +399,8 @@ async function fetchSmartAiOnlineCandidates(force) {
 }
 
 function prefetchSmartAiOnlineCandidates() {
-  queueSmartFavoriteAnalysis(dedupeSmartFavoriteTracks([].concat(playQueue || [], smartFavoritesState.tracks || [])));
+  queueSmartFavoriteAnalysis(playQueue || []);
+  smartMuqEnsureTexts().then(renderSmartAiPlaylist).catch(function (error) { smartAiAnalysisStatus(error.message); });
   if(typeof schedulePlaylistQueueHydration==='function')schedulePlaylistQueueHydration(0,'ai-complete-playlist');
   return;
 
@@ -324,7 +444,11 @@ function playSmartAiSelection(track, userInitiated, historyMode) {
 
 function playAiNextTrack(userInitiated) {
   if(smartAiNextRequest)return smartAiNextRequest;
-  smartAiNextRequest=selectAiNextTrack(userInitiated).finally(function(){smartAiNextRequest=null;});
+  smartAiNextRequest=selectAiNextTrack(userInitiated).catch(function(error){
+    smartAiAnalysisStatus('MuQ 推荐失败：'+(error && error.message || '模型不可用'));
+    showToast('MuQ 推荐暂不可用');
+    return false;
+  }).finally(function(){smartAiNextRequest=null;});
   return smartAiNextRequest;
 }
 
@@ -332,24 +456,23 @@ async function selectAiNextTrack(userInitiated) {
   playToggleBusy = false;
   forcePlaybackControlsInteractive();
   smartAiRememberCurrent();
-  var signature = smartAnalysisSignature();
   var pool = playQueue || [];
   queueSmartFavoriteAnalysis(pool);
-  if(smartFavoritesAnalysisQueue.length||smartFavoritesAnalysisBusy) {
+  await smartMuqEnsureTexts();
+  var warmup = 0;
+  var deadline = Date.now() + 120000;
+  while ((smartFavoritesAnalysisQueue.length || smartFavoritesAnalysisBusy) && warmup < 4 && Date.now() < deadline) {
     clearTimeout(smartFavoritesAnalysisTimer);smartFavoritesAnalysisTimer=0;
-    await runSmartFavoriteAnalysisBatch();
+    await Promise.race([runSmartFavoriteAnalysisBatch(), new Promise(function (resolve) { setTimeout(resolve, Math.max(1, deadline - Date.now())); })]);
+    warmup++;
+    if (pool !== playQueue || playMode !== 'ai') return false;
   }
-  var selected = smartAiWeightedPick(pool, smartAiContext());
-  while(!selected&&smartFavoritesAnalysisQueue.length){
-    clearTimeout(smartFavoritesAnalysisTimer);smartFavoritesAnalysisTimer=0;
-    await runSmartFavoriteAnalysisBatch();
-    if(pool!==playQueue||playMode!=='ai'||signature!==smartAnalysisSignature())return false;
-    selected=smartAiWeightedPick(pool,smartAiContext());
-  }
-  if(pool!==playQueue||playMode!=='ai'||signature!==smartAnalysisSignature())return false;
+  var selectedRow = smartMuqRank().find(function (row) { return row.index !== currentIdx; });
+  var selected = selectedRow && selectedRow.track;
+  if (pool !== playQueue || playMode !== 'ai') return false;
   if (!selected) {
     var active = smartActiveTagContext();
-    showToast(active.required.length ? '没有歌曲同时满足全部“必须”标签' : '当前推荐范围没有可用歌曲');
+    showToast(smartFavoritesAnalysisQueue.length || smartFavoritesAnalysisBusy ? 'MuQ 正在编码歌曲，请稍后再试' : (active.required.length ? '没有已编码歌曲同时满足全部“必须”标签' : '当前歌单没有可编码的候选歌曲'));
     return false;
   }
   return playSmartAiSelection(selected, userInitiated, 'next');

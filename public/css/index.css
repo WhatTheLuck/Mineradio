@@ -19494,6 +19494,18 @@ body.desktop-shell.desktop-wallpaper-mode.diy-mode #bottom-bar.stage-mode {
 .smart-ai-control-bar { flex-wrap:wrap; align-items:center; }
 .smart-ai-control-bar .smart-ai-tags { min-width:160px; flex:1 1 300px; }
 .smart-ai-control-bar .smart-ai-input-shell { flex:1 1 180px; }
+.smart-ai-control-bar .smart-ai-input-shell { display:flex; align-items:center; min-width:180px; }
+.smart-ai-control-bar .smart-ai-input-shell input { min-width:0; flex:1 1 auto; width:auto; }
+.smart-ai-input-shell #smart-ai-tag-kind { width:50px; flex:0 0 50px; padding:0 2px; border:0; background:transparent; color:inherit; font:10px var(--font-sans); }
+.smart-ai-input-shell #smart-ai-tag-kind option { background:#181d25; }
+.smart-ai-tag[data-kind="scene"] span::before { content:'场景·'; opacity:.5; font-size:9px; }
+.smart-ai-recommend-list { display:flex; width:100%; gap:5px; overflow-x:auto; scrollbar-width:thin; }
+.smart-ai-recommend-list button { display:flex; align-items:center; gap:7px; min-width:130px; max-width:230px; height:29px; padding:0 8px; border:1px solid rgba(255,255,255,.13); border-radius:7px; background:rgba(255,255,255,.055); color:inherit; cursor:pointer; font:11px var(--font-sans); }
+.smart-ai-recommend-list button:hover { border-color:rgba(var(--fc-accent-rgb),.6); }
+.smart-ai-recommend-list button b { color:rgba(var(--fc-accent-rgb),.85); }
+.smart-ai-recommend-list button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.smart-ai-recommend-list button small { margin-left:auto; opacity:.65; }
+.smart-ai-recommend-empty { font-size:11px; opacity:.65; }
 .external-visual-column input[type=range] { accent-color:var(--accent,#a9c4ba); }
 .external-visual-column input[type=checkbox] { accent-color:var(--accent,#a9c4ba); }
 #smart-favorites-modal:not(.llm-settings-mode) #smart-favorites-llm-settings { display:none; }

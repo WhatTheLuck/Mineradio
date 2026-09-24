@@ -1,9 +1,19 @@
 # Dependencies
 node_modules/
+__pycache__/
+*.pyc
 
 # Build output
 dist/
 dist-*/
+build/muq-runtime/
+build/muq-bundle/
+build/muq-q8-bundle/
+build/muq-hybrid-bundle/
+build/muq-main-half-bundle/
+build/muq-placeholder-bundle/
+build/.muq-venv/
+build/muq-pyinstaller/
 out/
 release/
 releases/

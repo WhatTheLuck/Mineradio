@@ -297,15 +297,14 @@ function smartAnalysisPayload(track) {
 }
 
 function queueSmartFavoriteAnalysis(tracks) {
+  if (playMode !== 'ai') return false;
   var bridge = smartFavoritesBridge();
-  if (!bridge || typeof bridge.analyzeSmartFavoriteTracks !== 'function') return false;
+  if (!bridge || typeof bridge.embedMuqAudio !== 'function') return false;
   var queued = Object.create(null);
   smartFavoritesAnalysisQueue.forEach(function (track) { queued[smartTrackKey(track)] = true; });
   (tracks || []).forEach(function (track) {
     var key = smartTrackKey(track);
-    var cached=(smartFavoritesState.analysisCache||{})[key];
-    if(cached&&cached.signature===smartAnalysisSignature()){track.llmTags=cached.analysis;track.llmTagSignature=cached.signature;}
-    if (!key || queued[key] || track.llmTagSignature===smartAnalysisSignature()) return;
+    if (!key || queued[key] || (smartMuqAudioVectors[key] && smartMuqAudioFingerprints[key] === smartMuqFingerprint(track))) return;
     queued[key] = true;
     smartFavoritesAnalysisQueue.push(track);
   });
@@ -328,54 +327,29 @@ async function performSmartFavoriteAnalysisBatch() {
   smartFavoritesAnalysisTimer = 0;
   if (smartFavoritesAnalysisBusy || !smartFavoritesAnalysisQueue.length) return;
   var bridge = smartFavoritesBridge();
-  if (!bridge || typeof bridge.analyzeSmartFavoriteTracks !== 'function') return;
+  if (!bridge || typeof bridge.embedMuqAudio !== 'function') return;
   smartFavoritesAnalysisBusy = true;
-  var batch = smartFavoritesAnalysisQueue.splice(0, 4);
-  var tags=smartAnalysisTags(),signature=JSON.stringify(tags);
-  smartAiAnalysisStatus('正在分析 '+batch.length+' 首，等待 '+smartFavoritesAnalysisQueue.length+' 首…');
+  var batch = smartFavoritesAnalysisQueue.splice(0, 1);
+  smartAiAnalysisStatus('MuQ 音频编码中 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首');
   try {
-    await Promise.all(batch.map(enrichSmartTrack));
-    var result = await bridge.analyzeSmartFavoriteTracks(batch.map(smartAnalysisPayload),tags);
-    var completed = Object.create(null);
-    (result && result.results || []).forEach(function (entry) {
-      completed[entry.key] = true;
-      delete smartFavoritesAnalysisAttempts[entry.key];
-      var track = smartFavoritesState.tracks.find(function (candidate) { return smartTrackKey(candidate) === entry.key; });
-      if (track) track.llmTags = entry.analysis;
-      smartFavoritesState.analysisCache[entry.key]={analysis:entry.analysis,signature:signature,at:Date.now()};
-      batch.concat(playQueue||[]).forEach(function(candidate){if(smartTrackKey(candidate)===entry.key){candidate.llmTags=entry.analysis;candidate.llmTagSignature=signature;}});
-      Object.keys(smartFavoritesState.onlineCache || {}).forEach(function (cacheKey) {
-        var online = smartFavoritesState.onlineCache[cacheKey];
-        var candidate = online && (online.tracks || []).find(function (item) { return smartTrackKey(item) === entry.key; });
-        if (candidate) candidate.llmTags = entry.analysis;
-      });
-    });
-    var unresolved = batch.filter(function (track) { return !completed[smartTrackKey(track)]; });
-    var retryable = [];
-    unresolved.forEach(function (track) {
-      var key = smartTrackKey(track);
-      var attempts = (smartFavoritesAnalysisAttempts[key] || 0) + 1;
-      smartFavoritesAnalysisAttempts[key] = attempts;
-      if (result && result.ok && attempts < 3) retryable.push(track);
-    });
-    if (retryable.length) smartFavoritesAnalysisQueue = retryable.concat(smartFavoritesAnalysisQueue);
-    if (result && result.results && result.results.length) saveSmartFavoritesState('llm-tags', false);
-    if (result && result.available === false) smartFavoritesAnalysisQueue = [];
-    if (result && result.ok) {
-      smartAiAnalysisStatus('标签已缓存 · '+Object.keys(smartFavoritesState.analysisCache).length+' 首'+(retryable.length?' · 本批漏回 '+retryable.length+' 首，自动拆小重试':(unresolved.length?' · '+unresolved.length+' 首连续漏回，已跳过':''))+' · 待处理 '+smartFavoritesAnalysisQueue.length+' 首');
-    } else {
-      smartAiAnalysisStatus('标签分析已暂停：'+(result&&result.error||'服务不可用')+' · '+smartAnalysisAvailability(batch)+' · 请检查模型后点击重试');
-    }
-    if(result&&!result.ok)smartFavoritesAnalysisQueue=[];
-    if(result&&result.available===false)smartAiAnalysisStatus('请先配置 LLM；仍可使用手工标签');
-    ['analysisCache','metadataCache'].forEach(function(key){var cache=smartFavoritesState[key];var keys=Object.keys(cache);if(keys.length>6000)keys.sort(function(a,b){return (cache[b].at||0)-(cache[a].at||0);}).slice(6000).forEach(function(k){delete cache[k];});});
-    saveSmartFavoritesState('analysis-cache',false);
-  } catch (error) { smartAiAnalysisStatus('标签分析已暂停：'+(error&&error.message||'服务不可用')+' · '+smartAnalysisAvailability(batch)+' · 请检查模型后点击重试');smartFavoritesAnalysisQueue=[]; }
+    var status = await bridge.getMuqStatus();
+    if (!status || !status.available) throw new Error('模型尚未打包');
+    var key = smartTrackKey(batch[0]);
+    var cached = await bridge.getMuqAudioCache([key]);
+    var fingerprint = smartMuqFingerprint(batch[0]);
+    var existing = cached && cached.entries && cached.entries[key];
+    if (existing && existing.fingerprint === fingerprint) smartMuqAudioVectors[key] = existing.vector;
+    else smartMuqAudioVectors[key] = await smartMuqEmbedTrack(batch[0], fingerprint);
+    smartMuqAudioFingerprints[key] = fingerprint;
+    smartAiAnalysisStatus('MuQ 已编码 '+Object.keys(smartMuqAudioVectors).length+' 首 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首');
+    if (typeof renderSmartAiPlaylist === 'function') renderSmartAiPlaylist();
+  } catch (error) {
+    smartAiAnalysisStatus('MuQ 编码失败：'+(error && error.message || '音频不可用')+' · 点击重试');
+    smartFavoritesAnalysisAttempts[smartTrackKey(batch[0])] = true;
+    if (error && error.message === '模型尚未打包') smartFavoritesAnalysisQueue = [];
+  }
   smartFavoritesAnalysisBusy = false;
-  if (typeof renderSmartAiControlBar === 'function') renderSmartAiControlBar();
-  if (typeof renderCurrentSmartTags === 'function') renderCurrentSmartTags();
-  if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('smart-tags-updated');
-  if (smartFavoritesAnalysisQueue.length) scheduleSmartFavoriteAnalysis(1400);
+  if (smartFavoritesAnalysisQueue.length) scheduleSmartFavoriteAnalysis(200);
 }
 
 async function refreshSmartFavoritesLlmStatus() {

@@ -256,134 +256,109 @@ Function MineradioUsePreferredInstallDir
   Pop $INSTDIR
 FunctionEnd
 
-Function MineradioUseFirstAvailableInstallDir
-  IfFileExists "D:\*.*" driveD 0
-  IfFileExists "E:\*.*" driveE 0
-  IfFileExists "F:\*.*" driveF 0
-  IfFileExists "G:\*.*" driveG 0
-  IfFileExists "H:\*.*" driveH 0
-  IfFileExists "I:\*.*" driveI 0
-  IfFileExists "J:\*.*" driveJ 0
-  IfFileExists "K:\*.*" driveK 0
-  IfFileExists "L:\*.*" driveL 0
-  IfFileExists "M:\*.*" driveM 0
-  IfFileExists "N:\*.*" driveN 0
-  IfFileExists "O:\*.*" driveO 0
-  IfFileExists "P:\*.*" driveP 0
-  IfFileExists "Q:\*.*" driveQ 0
-  IfFileExists "R:\*.*" driveR 0
-  IfFileExists "S:\*.*" driveS 0
-  IfFileExists "T:\*.*" driveT 0
-  IfFileExists "U:\*.*" driveU 0
-  IfFileExists "V:\*.*" driveV 0
-  IfFileExists "W:\*.*" driveW 0
-  IfFileExists "X:\*.*" driveX 0
-  IfFileExists "Y:\*.*" driveY 0
-  IfFileExists "Z:\*.*" driveZ 0
-  StrCpy $INSTDIR "C:\${MINERADIO_INSTALL_DIR_NAME}"
-  Return
+!macro MineradioSelectDrive LETTER
+  Push "${LETTER}:\"
+  Call MineradioIsSupportedInstallDrive
+  Pop $0
+  ${If} $0 == "1"
+    StrCpy $INSTDIR "${LETTER}:\${MINERADIO_INSTALL_DIR_NAME}"
+    Return
+  ${EndIf}
+!macroend
 
-  driveD:
-    StrCpy $INSTDIR "D:\${MINERADIO_INSTALL_DIR_NAME}"
+!macro MineradioCheckDrive LETTER
+  Push "${LETTER}:\"
+  Call MineradioIsSupportedInstallDrive
+  Pop $0
+  ${If} $0 == "1"
+    Push "1"
     Return
-  driveE:
-    StrCpy $INSTDIR "E:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveF:
-    StrCpy $INSTDIR "F:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveG:
-    StrCpy $INSTDIR "G:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveH:
-    StrCpy $INSTDIR "H:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveI:
-    StrCpy $INSTDIR "I:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveJ:
-    StrCpy $INSTDIR "J:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveK:
-    StrCpy $INSTDIR "K:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveL:
-    StrCpy $INSTDIR "L:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveM:
-    StrCpy $INSTDIR "M:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveN:
-    StrCpy $INSTDIR "N:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveO:
-    StrCpy $INSTDIR "O:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveP:
-    StrCpy $INSTDIR "P:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveQ:
-    StrCpy $INSTDIR "Q:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveR:
-    StrCpy $INSTDIR "R:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveS:
-    StrCpy $INSTDIR "S:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveT:
-    StrCpy $INSTDIR "T:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveU:
-    StrCpy $INSTDIR "U:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveV:
-    StrCpy $INSTDIR "V:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveW:
-    StrCpy $INSTDIR "W:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveX:
-    StrCpy $INSTDIR "X:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveY:
-    StrCpy $INSTDIR "Y:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
-  driveZ:
-    StrCpy $INSTDIR "Z:\${MINERADIO_INSTALL_DIR_NAME}"
-    Return
+  ${EndIf}
+!macroend
+
+Function MineradioUseFirstAvailableInstallDir
+  !insertmacro MineradioSelectDrive "D"
+  !insertmacro MineradioSelectDrive "E"
+  !insertmacro MineradioSelectDrive "F"
+  !insertmacro MineradioSelectDrive "G"
+  !insertmacro MineradioSelectDrive "H"
+  !insertmacro MineradioSelectDrive "I"
+  !insertmacro MineradioSelectDrive "J"
+  !insertmacro MineradioSelectDrive "K"
+  !insertmacro MineradioSelectDrive "L"
+  !insertmacro MineradioSelectDrive "M"
+  !insertmacro MineradioSelectDrive "N"
+  !insertmacro MineradioSelectDrive "O"
+  !insertmacro MineradioSelectDrive "P"
+  !insertmacro MineradioSelectDrive "Q"
+  !insertmacro MineradioSelectDrive "R"
+  !insertmacro MineradioSelectDrive "S"
+  !insertmacro MineradioSelectDrive "T"
+  !insertmacro MineradioSelectDrive "U"
+  !insertmacro MineradioSelectDrive "V"
+  !insertmacro MineradioSelectDrive "W"
+  !insertmacro MineradioSelectDrive "X"
+  !insertmacro MineradioSelectDrive "Y"
+  !insertmacro MineradioSelectDrive "Z"
+  StrCpy $INSTDIR "C:\${MINERADIO_INSTALL_DIR_NAME}"
 FunctionEnd
 
 Function MineradioHasPreferredInstallDrive
-  IfFileExists "D:\*.*" hasPreferred 0
-  IfFileExists "E:\*.*" hasPreferred 0
-  IfFileExists "F:\*.*" hasPreferred 0
-  IfFileExists "G:\*.*" hasPreferred 0
-  IfFileExists "H:\*.*" hasPreferred 0
-  IfFileExists "I:\*.*" hasPreferred 0
-  IfFileExists "J:\*.*" hasPreferred 0
-  IfFileExists "K:\*.*" hasPreferred 0
-  IfFileExists "L:\*.*" hasPreferred 0
-  IfFileExists "M:\*.*" hasPreferred 0
-  IfFileExists "N:\*.*" hasPreferred 0
-  IfFileExists "O:\*.*" hasPreferred 0
-  IfFileExists "P:\*.*" hasPreferred 0
-  IfFileExists "Q:\*.*" hasPreferred 0
-  IfFileExists "R:\*.*" hasPreferred 0
-  IfFileExists "S:\*.*" hasPreferred 0
-  IfFileExists "T:\*.*" hasPreferred 0
-  IfFileExists "U:\*.*" hasPreferred 0
-  IfFileExists "V:\*.*" hasPreferred 0
-  IfFileExists "W:\*.*" hasPreferred 0
-  IfFileExists "X:\*.*" hasPreferred 0
-  IfFileExists "Y:\*.*" hasPreferred 0
-  IfFileExists "Z:\*.*" hasPreferred 0
+  !insertmacro MineradioCheckDrive "D"
+  !insertmacro MineradioCheckDrive "E"
+  !insertmacro MineradioCheckDrive "F"
+  !insertmacro MineradioCheckDrive "G"
+  !insertmacro MineradioCheckDrive "H"
+  !insertmacro MineradioCheckDrive "I"
+  !insertmacro MineradioCheckDrive "J"
+  !insertmacro MineradioCheckDrive "K"
+  !insertmacro MineradioCheckDrive "L"
+  !insertmacro MineradioCheckDrive "M"
+  !insertmacro MineradioCheckDrive "N"
+  !insertmacro MineradioCheckDrive "O"
+  !insertmacro MineradioCheckDrive "P"
+  !insertmacro MineradioCheckDrive "Q"
+  !insertmacro MineradioCheckDrive "R"
+  !insertmacro MineradioCheckDrive "S"
+  !insertmacro MineradioCheckDrive "T"
+  !insertmacro MineradioCheckDrive "U"
+  !insertmacro MineradioCheckDrive "V"
+  !insertmacro MineradioCheckDrive "W"
+  !insertmacro MineradioCheckDrive "X"
+  !insertmacro MineradioCheckDrive "Y"
+  !insertmacro MineradioCheckDrive "Z"
   Push "0"
-  Return
+FunctionEnd
 
-  hasPreferred:
-    Push "1"
-    Return
+Function MineradioIsSupportedInstallDrive
+  Exch $0
+  Push $1
+  Push $2
+  Push $3
+  Push $4
+  StrCpy $1 "0"
+  System::Call 'kernel32::GetDriveTypeW(w r0) i .r2'
+  ${If} $2 == 2
+  ${OrIf} $2 == 3
+    ; Google Drive's streamed virtual disk reports FAT, even when Windows calls it fixed.
+    System::Call 'kernel32::GetVolumeInformationW(w r0, p 0, i 0, p 0, p 0, p 0, t .r3, i ${NSIS_MAX_STRLEN}) i .r4'
+    ${If} $4 != 0
+    ${AndIf} $3 == "NTFS"
+      StrCpy $1 "1"
+    ${ElseIf} $4 != 0
+    ${AndIf} $3 == "ReFS"
+      StrCpy $1 "1"
+    ${ElseIf} $4 != 0
+    ${AndIf} $3 == "exFAT"
+      StrCpy $1 "1"
+    ${EndIf}
+  ${EndIf}
+  StrCpy $0 "$1"
+  Pop $4
+  Pop $3
+  Pop $2
+  Pop $1
+  Exch $0
 FunctionEnd
 
 Function MineradioNormalizeInstallDir
@@ -464,6 +439,14 @@ Function MineradioExistingInstallPathCanBeAdopted
   Call MineradioNormalizeInstallDir
   Pop $3
   ${If} $2 != $3
+    Goto done
+  ${EndIf}
+
+  StrCpy $4 "$2" 3
+  Push "$4"
+  Call MineradioIsSupportedInstallDrive
+  Pop $4
+  ${If} $4 != "1"
     Goto done
   ${EndIf}
 
@@ -727,11 +710,19 @@ FunctionEnd
 
 Function MineradioDeleteLegacyUninstallerFileIfMissingMarker
   Pop $0
+  Push $2
   ${If} $0 != ""
     Push "$0"
     Call MineradioTrimInstallDir
     Pop $1
     ${If} $1 != ""
+      StrCpy $2 "$1" 3
+      Push "$2"
+      Call MineradioIsSupportedInstallDrive
+      Pop $2
+      ${If} $2 != "1"
+        Goto done
+      ${EndIf}
       IfFileExists "$1\${MINERADIO_INSTALL_MARKER}" done 0
       DetailPrint "Remove legacy Mineradio uninstaller file: $1"
       Delete "$1\Uninstall ${PRODUCT_FILENAME}.exe"
@@ -739,12 +730,22 @@ Function MineradioDeleteLegacyUninstallerFileIfMissingMarker
   ${EndIf}
 
   done:
+    Pop $2
 FunctionEnd
 
 Function MineradioValidateInstallDir
   Push "$INSTDIR"
   Call MineradioNormalizeInstallDir
   Pop $INSTDIR
+
+  StrCpy $0 "$INSTDIR" 3
+  Push "$0"
+  Call MineradioIsSupportedInstallDrive
+  Pop $0
+  ${If} $0 != "1"
+    MessageBox MB_ICONSTOP|MB_OK "请选择本机 NTFS、ReFS 或 exFAT 磁盘安装 Mineradio。Google Drive 等云端虚拟盘、网络盘和 FAT 盘不支持安装。$\r$\n$\r$\n当前路径：$INSTDIR"
+    Abort
+  ${EndIf}
 
   Push "$INSTDIR"
   Call MineradioRegisteredInstallDirCanBeAdopted

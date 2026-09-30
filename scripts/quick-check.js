@@ -3196,6 +3196,14 @@ function checkInternalBetaPackagingGuard() {
   if (!/MINERADIO_INSTALL_DIR_NAME/.test(installerText) || !/MINERADIO_INSTALL_NOTICE/.test(installerText)) {
     fail('shared installer must keep configurable install-folder and notice hooks');
   }
+  const defaultDir = installerText.match(/Function MineradioUseFirstAvailableInstallDir([\s\S]*?)FunctionEnd/);
+  const validateDir = installerText.match(/Function MineradioValidateInstallDir([\s\S]*?)FunctionEnd/);
+  if (!defaultDir || !/MineradioSelectDrive "C"/.test(defaultDir[1])
+    || defaultDir[1].indexOf('MineradioSelectDrive "C"') > defaultDir[1].indexOf('MineradioSelectDrive "D"')
+    || !validateDir || /MineradioHasPreferredInstallDrive|不安装到 C 盘/.test(validateDir[1])
+    || !/默认安装到 C:\\/.test(installerText) || !/默认推荐：C:\\/.test(installerText)) {
+    fail('installer must default to C and allow a supported C drive');
+  }
   const mainText = fs.readFileSync(path.join(appRoot, 'desktop', 'main.js'), 'utf8');
   if (!/APP_PACKAGE_INFO/.test(mainText) || !/runtimeName/.test(mainText) || !/appUserModelId/.test(mainText)) {
     fail('desktop runtime must read beta name/AppUserModelID from package metadata');

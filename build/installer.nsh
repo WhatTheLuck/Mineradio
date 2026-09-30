@@ -266,17 +266,8 @@ FunctionEnd
   ${EndIf}
 !macroend
 
-!macro MineradioCheckDrive LETTER
-  Push "${LETTER}:\"
-  Call MineradioIsSupportedInstallDrive
-  Pop $0
-  ${If} $0 == "1"
-    Push "1"
-    Return
-  ${EndIf}
-!macroend
-
 Function MineradioUseFirstAvailableInstallDir
+  !insertmacro MineradioSelectDrive "C"
   !insertmacro MineradioSelectDrive "D"
   !insertmacro MineradioSelectDrive "E"
   !insertmacro MineradioSelectDrive "F"
@@ -301,33 +292,6 @@ Function MineradioUseFirstAvailableInstallDir
   !insertmacro MineradioSelectDrive "Y"
   !insertmacro MineradioSelectDrive "Z"
   StrCpy $INSTDIR "C:\${MINERADIO_INSTALL_DIR_NAME}"
-FunctionEnd
-
-Function MineradioHasPreferredInstallDrive
-  !insertmacro MineradioCheckDrive "D"
-  !insertmacro MineradioCheckDrive "E"
-  !insertmacro MineradioCheckDrive "F"
-  !insertmacro MineradioCheckDrive "G"
-  !insertmacro MineradioCheckDrive "H"
-  !insertmacro MineradioCheckDrive "I"
-  !insertmacro MineradioCheckDrive "J"
-  !insertmacro MineradioCheckDrive "K"
-  !insertmacro MineradioCheckDrive "L"
-  !insertmacro MineradioCheckDrive "M"
-  !insertmacro MineradioCheckDrive "N"
-  !insertmacro MineradioCheckDrive "O"
-  !insertmacro MineradioCheckDrive "P"
-  !insertmacro MineradioCheckDrive "Q"
-  !insertmacro MineradioCheckDrive "R"
-  !insertmacro MineradioCheckDrive "S"
-  !insertmacro MineradioCheckDrive "T"
-  !insertmacro MineradioCheckDrive "U"
-  !insertmacro MineradioCheckDrive "V"
-  !insertmacro MineradioCheckDrive "W"
-  !insertmacro MineradioCheckDrive "X"
-  !insertmacro MineradioCheckDrive "Y"
-  !insertmacro MineradioCheckDrive "Z"
-  Push "0"
 FunctionEnd
 
 Function MineradioIsSupportedInstallDrive
@@ -755,22 +719,6 @@ Function MineradioValidateInstallDir
   Call MineradioExistingInstallPathCanBeAdopted
   Pop $4
 
-  StrCpy $0 "$INSTDIR" 1 0
-  StrCpy $1 "$INSTDIR" 1 1
-  ${If} $1 == ":"
-    ${If} $0 == "C"
-    ${OrIf} $0 == "c"
-      Call MineradioHasPreferredInstallDrive
-      Pop $2
-      ${If} $2 == "1"
-      ${AndIf} $3 != "1"
-      ${AndIf} $4 != "1"
-        MessageBox MB_ICONSTOP|MB_OK "检测到这台电脑还有 D-Z 盘，Mineradio 不安装到 C 盘。请改选 D 盘或其它非 C 盘的 Mineradio 文件夹。$\r$\n$\r$\n如果电脑只有 C 盘，安装器会自动放行 C:\Mineradio。"
-        Abort
-      ${EndIf}
-    ${EndIf}
-  ${EndIf}
-
   StrLen $0 "$INSTDIR"
   StrLen $2 "${MINERADIO_INSTALL_DIR_NAME}"
   IntOp $2 $2 + 1
@@ -840,7 +788,7 @@ Function MineradioWelcomeShow
   Pop $0
   SetCtlColors $0 "" "3257F7"
 
-  ${NSD_CreateLabel} 22u 96u 238u 24u "为这台电脑安装 ${PRODUCT_NAME}。默认安装到 D:\${MINERADIO_INSTALL_DIR_NAME}，下一步可以自由选择其它位置。"
+  ${NSD_CreateLabel} 22u 96u 238u 24u "为这台电脑安装 ${PRODUCT_NAME}。默认安装到 C:\${MINERADIO_INSTALL_DIR_NAME}，下一步可以自由选择其它位置。"
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioBodyFont 1
   SetCtlColors $0 "4B5263" "FFFFFF"
@@ -912,7 +860,7 @@ Function MineradioDirectoryShow
   SendMessage $0 ${WM_SETFONT} $MineradioSmallFont 1
   ${NSD_OnClick} $0 MineradioDirectoryBrowse
 
-  ${NSD_CreateLabel} 22u 122u 238u 12u "默认推荐：D:\${MINERADIO_INSTALL_DIR_NAME}；选盘符会自动建文件夹。"
+  ${NSD_CreateLabel} 22u 122u 238u 12u "默认推荐：C:\${MINERADIO_INSTALL_DIR_NAME}；选盘符会自动建文件夹。"
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioSmallFont 1
   SetCtlColors $0 "6B7280" "FFFFFF"

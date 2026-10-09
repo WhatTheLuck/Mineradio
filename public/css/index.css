@@ -19549,7 +19549,11 @@ body.desktop-shell.desktop-wallpaper-mode.diy-mode #bottom-bar.stage-mode {
 .external-visual-column .external-visual-status { overflow-wrap:anywhere; }
 #ai-play-mode-btn { font-size:12px; font-weight:700; width:34px; flex-shrink:0; }
 #ai-play-mode-btn.active { color:var(--accent,#b6ffdf); background:rgba(255,255,255,.12); }
-#smart-ai-analysis-status { width:auto; height:auto; min-width:100px; max-width:240px; font-size:11px; line-height:1.5; white-space:normal; flex:0 1 auto; }
+#smart-ai-analysis-status { display:grid; grid-template-columns:1fr auto; justify-items:stretch; gap:5px 10px; width:220px; height:auto; min-width:150px; max-width:260px; padding:9px 11px; font-size:10px; line-height:1.5; white-space:normal; flex:0 1 auto; text-align:left; }
+#smart-ai-progress-label { grid-column:1; }
+#smart-ai-progress-count { grid-column:2; font-variant-numeric:tabular-nums; text-align:right; }
+.smart-ai-progress { grid-column:1 / -1; grid-row:2; display:block; width:100%; height:4px; overflow:hidden; border-radius:4px; background:rgba(255,255,255,.12); }
+#smart-ai-progress-fill { display:block; width:0; height:100%; border-radius:inherit; background:rgba(var(--fc-accent-rgb),.9); transition:width .2s ease; }
 #smart-ai-analysis-status[data-paused="true"] { color:rgba(var(--fc-accent-rgb),.95); background:rgba(var(--fc-accent-rgb),.12); box-shadow:inset 0 0 0 1px rgba(var(--fc-accent-rgb),.32); }
 .smart-ai-control-bar { flex-wrap:wrap; align-items:center; }
 .smart-ai-control-bar .smart-ai-tags { min-width:160px; flex:1 1 300px; }
@@ -19563,7 +19567,7 @@ body.desktop-shell.desktop-wallpaper-mode.diy-mode #bottom-bar.stage-mode {
   overflow-y: hidden;
   padding: 2px 1px 7px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--fc-accent-rgb), .32) transparent;
+  scrollbar-color: transparent transparent;
   scroll-snap-type: x proximity;
   overscroll-behavior-inline: contain;
 }
@@ -19571,9 +19575,10 @@ body.desktop-shell.desktop-wallpaper-mode.diy-mode #bottom-bar.stage-mode {
 .smart-ai-recommend-list::-webkit-scrollbar-track { background: transparent; }
 .smart-ai-recommend-list::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(var(--fc-accent-rgb), .32);
+  background: transparent;
 }
-.smart-ai-recommend-list:hover::-webkit-scrollbar-thumb { background: rgba(var(--fc-accent-rgb), .52); }
+.smart-ai-recommend-list.is-scrolling { scrollbar-color: rgba(var(--fc-accent-rgb), .52) transparent; }
+.smart-ai-recommend-list.is-scrolling::-webkit-scrollbar-thumb { background: rgba(var(--fc-accent-rgb), .52); }
 .smart-ai-recommend-list button {
   display: flex;
   flex: 0 0 clamp(164px, 20vw, 216px);
@@ -19618,6 +19623,9 @@ body.desktop-shell.desktop-wallpaper-mode.diy-mode #bottom-bar.stage-mode {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.smart-ai-recommend-list .smart-ai-recommend-song { display:flex; flex-direction:column; gap:4px; }
+.smart-ai-next-label { font-size:9px; line-height:1; font-style:normal; color:rgba(var(--fc-accent-rgb),.9); }
+.smart-ai-recommend-list button[data-next-play="true"] { border-color:rgba(var(--fc-accent-rgb),.3); }
 .smart-ai-recommend-list button small {
   flex: 0 0 auto;
   padding: 4px 6px;

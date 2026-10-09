@@ -1,4 +1,10 @@
 {
+  "MuQ · 已暂停": "MuQ · Paused",
+  "MuQ · 编码中": "MuQ · Encoding",
+  "MuQ · 已完成": "MuQ · Complete",
+  "MuQ · 待编码": "MuQ · Pending",
+  "MuQ · 编码失败": "MuQ · Encoding failed",
+  "MuQ 编码进度": "MuQ encoding progress",
   "\" title=\"从内置歌单移除\" aria-label=\"从内置歌单移除\">×": "\" title=\"Remove from built-in playlist\" aria-label=\"Remove from built-in playlist\">×",
   "\" title=\"从列表隐藏\">×": "\" title=\"Hide from list\">×",
   "\" title=\"移除此索引目录\">×": "\" title=\"Remove this index directory\">×",

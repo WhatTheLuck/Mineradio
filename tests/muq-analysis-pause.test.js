@@ -56,6 +56,8 @@ test('MuQ pause keeps completed embeddings and resumes the remaining queue', asy
 
   sandbox.queueSmartFavoriteAnalysis(tracks);
   assert.equal(sandbox.smartFavoritesAnalysisQueue.length, 3);
+  assert.equal(sandbox.smartMuqAnalysisProgress().total, 3);
+  assert.equal(sandbox.smartMuqAnalysisProgress().percent, 0);
   sandbox.toggleSmartFavoriteAnalysis();
   assert.equal(state.muqPaused, true);
   assert.equal(timers.size, 0, 'pause cancels the pending batch timer');
@@ -66,12 +68,16 @@ test('MuQ pause keeps completed embeddings and resumes the remaining queue', asy
   const running = next();
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(calls, ['a']);
+  sandbox.queueSmartFavoriteAnalysis(tracks);
+  assert.equal(sandbox.smartFavoritesAnalysisQueue.length, 2, 'the in-flight song is not queued twice');
   sandbox.toggleSmartFavoriteAnalysis();
   finishFirst([1, 0]);
   await running;
   assert.equal(timers.size, 0, 'the current song finishes without starting the next one');
   assert.equal(sandbox.smartFavoritesAnalysisQueue.length, 2);
   assert.deepEqual(sandbox.smartMuqAudioVectors.a, [1, 0]);
+  assert.equal(sandbox.smartMuqAnalysisProgress().completed, 1);
+  assert.equal(sandbox.smartMuqAnalysisProgress().percent, 33);
 
   sandbox.toggleSmartFavoriteAnalysis();
   assert.equal(timers.size, 1);
@@ -84,8 +90,18 @@ test('MuQ pause keeps completed embeddings and resumes the remaining queue', asy
   timers.clear();
   await last();
   assert.deepEqual(calls, ['a', 'b', 'c']);
+  assert.equal(sandbox.smartMuqAnalysisProgress().percent, 100);
   sandbox.toggleSmartFavoriteAnalysis();
   sandbox.toggleSmartFavoriteAnalysis();
   assert.equal(timers.size, 0, 'resuming after completion does not schedule a new encoding pass');
   assert.deepEqual(calls, ['a', 'b', 'c']);
+  sandbox.smartMuqEmbedTrack = async () => { throw new Error('audio unavailable'); };
+  sandbox.queueSmartFavoriteAnalysis([{ key: 'd' }]);
+  assert.equal(sandbox.smartMuqAnalysisProgress().percent, 75, 'new work extends the progress total');
+  const failedBatch = timers.values().next().value;
+  timers.clear();
+  await failedBatch();
+  assert.equal(sandbox.smartMuqAnalysisProgress().encoded, 3, 'failure never counts as an encoded song');
+  assert.equal(sandbox.smartMuqAnalysisProgress().failed, 1);
+  assert.equal(sandbox.smartMuqAnalysisProgress().percent, 100, 'all attempts are complete with the failure explicitly counted');
 });

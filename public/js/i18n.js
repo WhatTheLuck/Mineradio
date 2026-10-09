@@ -22,6 +22,7 @@
     '#merged-playlist-name, #login-easter-unlock-phrase, .comment-text, .comment-user-name';
   var han = /[\u3400-\u9fff]/;
   var dynamicLabels = [
+    [/^(\d+ \/ \d+ · \d+%) · 失败 (\d+)$/, function (m) { return m[1] + ' · Failed ' + m[2]; }],
     [/^([\d/]+) 首 · 正在播放 (\d+)$/, function (m) { return m[1] + ' songs · Playing ' + m[2]; }],
     [/^(\d+) 首去重歌曲 · (\d+) 个来源$/, function (m) { return m[1] + ' unique songs · ' + m[2] + ' sources'; }],
     [/^已加载全部 (\d+) 首$/, function (m) { return 'All ' + m[1] + ' songs loaded'; }],

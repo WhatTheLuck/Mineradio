@@ -9,15 +9,42 @@ var smartFavoritesAnalysisPromise = null;
 var smartFavoritesAnalysisPaused = !!smartFavoritesState.muqPaused;
 var smartMetadataRequests = Object.create(null);
 var smartFavoritesAnalysisAttempts = Object.create(null);
+var smartFavoritesAnalysisTargets = Object.create(null);
+var smartFavoritesAnalysisFailures = Object.create(null);
+var smartFavoritesAnalysisCurrent = null;
+
+function smartMuqAnalysisProgress() {
+  var keys = Object.keys(smartFavoritesAnalysisTargets);
+  var encoded = 0, failed = 0;
+  keys.forEach(function (key) {
+    var fingerprint = smartFavoritesAnalysisTargets[key];
+    if (smartMuqAudioVectors[key] && smartMuqAudioFingerprints[key] === fingerprint) encoded++;
+    else if (smartFavoritesAnalysisFailures[fingerprint]) failed++;
+  });
+  var completed = encoded + failed, total = keys.length;
+  return { total: total, completed: completed, encoded: encoded, failed: failed, percent: total ? Math.round(completed / total * 100) : 0 };
+}
 
 function smartAnalysisTags() { return (smartFavoritesState.tags || []).map(function(tag){return tag.value;}).sort(); }
 function smartAnalysisSignature() { return JSON.stringify(smartAnalysisTags()); }
 function smartAiAnalysisStatus(message) {
   var node = document.getElementById('smart-ai-analysis-status');
   if (node) {
-    node.textContent = message;
-    node.title = smartFavoritesAnalysisPaused ? '继续 MuQ 编码' : '暂停 MuQ 编码';
-    node.setAttribute('aria-label', node.title + '。' + message);
+    var progress = smartMuqAnalysisProgress();
+    var label = document.getElementById('smart-ai-progress-label');
+    var meter = document.getElementById('smart-ai-progress');
+    var fill = document.getElementById('smart-ai-progress-fill');
+    var count = document.getElementById('smart-ai-progress-count');
+    if (label && meter && fill && count) {
+      label.textContent = /失败|不可用|failed|error/i.test(message) ? 'MuQ · 编码失败' : smartFavoritesAnalysisPaused ? 'MuQ · 已暂停' : smartFavoritesAnalysisBusy ? 'MuQ · 编码中' : progress.total && progress.completed === progress.total ? 'MuQ · 已完成' : 'MuQ · 待编码';
+      count.textContent = progress.completed + ' / ' + progress.total + ' · ' + progress.percent + '%';
+      if (progress.failed) count.textContent += ' · 失败 ' + progress.failed;
+      meter.setAttribute('aria-valuenow', String(progress.percent));
+      meter.setAttribute('aria-valuetext', progress.encoded + ' 首已编码，' + progress.failed + ' 首失败，共 ' + progress.total + ' 首');
+      fill.style.width = progress.percent + '%';
+    } else node.textContent = message;
+    node.title = (smartFavoritesAnalysisPaused ? '继续 MuQ 编码' : '暂停 MuQ 编码') + '。' + message;
+    node.setAttribute('aria-label', node.title);
     node.dataset.paused = String(smartFavoritesAnalysisPaused);
   }
 }
@@ -308,11 +335,18 @@ function queueSmartFavoriteAnalysis(tracks) {
   smartFavoritesAnalysisQueue.forEach(function (track) { queued[smartTrackKey(track)] = true; });
   (tracks || []).forEach(function (track) {
     var key = smartTrackKey(track);
-    if (!key || queued[key] || (smartMuqAudioVectors[key] && smartMuqAudioFingerprints[key] === smartMuqFingerprint(track))) return;
+    var fingerprint = smartMuqFingerprint(track);
+    if (!key) return;
+    var previous = smartFavoritesAnalysisTargets[key];
+    if (previous && previous !== fingerprint) delete smartFavoritesAnalysisFailures[previous];
+    smartFavoritesAnalysisTargets[key] = fingerprint;
+    if (queued[key] || (smartFavoritesAnalysisCurrent && smartMuqFingerprint(smartFavoritesAnalysisCurrent) === fingerprint) || (smartMuqAudioVectors[key] && smartMuqAudioFingerprints[key] === fingerprint)) return;
+    delete smartFavoritesAnalysisFailures[fingerprint];
     queued[key] = true;
     smartFavoritesAnalysisQueue.push(track);
   });
   if (smartFavoritesAnalysisPaused) smartAiAnalysisStatus('MuQ 已暂停 · 待处理 ' + smartFavoritesAnalysisQueue.length + ' 首 · 点击继续');
+  else smartAiAnalysisStatus('MuQ 编码进度 · 点击暂停');
   scheduleSmartFavoriteAnalysis(220);
   return true;
 }
@@ -335,22 +369,30 @@ async function performSmartFavoriteAnalysisBatch() {
   if (!bridge || typeof bridge.embedMuqAudio !== 'function') return;
   smartFavoritesAnalysisBusy = true;
   var batch = smartFavoritesAnalysisQueue.splice(0, 1);
+  smartFavoritesAnalysisCurrent = batch[0];
+  var failureMessage = '';
   smartAiAnalysisStatus('MuQ 音频编码中 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首 · 点击暂停');
   try {
     var status = await bridge.getMuqStatus();
     if (!status || !status.available) throw new Error('模型尚未打包');
-    var key = smartTrackKey(batch[0]);
     await smartMuqEnsureAudio(batch[0]);
     smartAiAnalysisStatus('MuQ 已编码 '+Object.keys(smartMuqAudioVectors).length+' 首 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首 · 点击暂停');
     if (typeof renderSmartAiPlaylist === 'function') renderSmartAiPlaylist();
     if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('muq-audio-ready');
   } catch (error) {
-    smartAiAnalysisStatus('MuQ 编码失败：'+(error && error.message || '音频不可用'));
+    smartFavoritesAnalysisFailures[smartMuqFingerprint(batch[0])] = true;
+    failureMessage = 'MuQ 编码失败：'+(error && error.message || '音频不可用');
+    smartAiAnalysisStatus(failureMessage);
     smartFavoritesAnalysisAttempts[smartTrackKey(batch[0])] = true;
     if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('muq-audio-failed');
-    if (error && error.message === '模型尚未打包') smartFavoritesAnalysisQueue = [];
+    if (error && error.message === '模型尚未打包') {
+      smartFavoritesAnalysisQueue.forEach(function (track) { smartFavoritesAnalysisFailures[smartMuqFingerprint(track)] = true; });
+      smartFavoritesAnalysisQueue = [];
+    }
   }
   smartFavoritesAnalysisBusy = false;
+  smartFavoritesAnalysisCurrent = null;
+  smartAiAnalysisStatus(failureMessage || 'MuQ 已编码 ' + smartMuqAnalysisProgress().encoded + ' 首 · 待处理 ' + smartFavoritesAnalysisQueue.length + ' 首 · 点击暂停');
   if (smartFavoritesAnalysisPaused) smartAiAnalysisStatus('MuQ 已暂停 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首 · 点击继续');
   if (smartFavoritesAnalysisQueue.length) scheduleSmartFavoriteAnalysis(200);
 }

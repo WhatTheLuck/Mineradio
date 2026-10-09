@@ -132,8 +132,17 @@ function renderSmartAiPlaylist() {
   if (!root) return;
   var rows = smartMuqRank().filter(function (row) { return row.index !== currentIdx; }).slice(0, 12);
   root.innerHTML = rows.map(function (row, index) {
-    return '<button type="button" data-muq-index="'+row.index+'"><b>'+(index+1)+'</b><span>'+escHtml(row.track.name || row.track.title || '未知歌曲')+'</span><small>'+smartMuqRelevancePercent(row.score)+'%</small></button>';
+    return '<button type="button" data-muq-index="'+row.index+'"'+(index === 0 ? ' data-next-play="true"' : '')+'><b>'+(index+1)+'</b><span class="smart-ai-recommend-song"><span data-i18n-skip>'+escHtml(row.track.name || row.track.title || '未知歌曲')+'</span>'+(index === 0 ? '<em class="smart-ai-next-label">下一首播放</em>' : '')+'</span><small>'+smartMuqRelevancePercent(row.score)+'%</small></button>';
   }).join('') || '<span class="smart-ai-recommend-empty">正在分析歌单音频…</span>';
+}
+
+function onSmartAiRecommendationScroll(root) {
+  root.classList.add('is-scrolling');
+  if (root.smartAiScrollTimer) clearTimeout(root.smartAiScrollTimer);
+  root.smartAiScrollTimer = setTimeout(function () {
+    root.classList.remove('is-scrolling');
+    root.smartAiScrollTimer = 0;
+  }, 700);
 }
 
 function playSmartAiRecommendation(index) {

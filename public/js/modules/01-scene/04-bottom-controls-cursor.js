@@ -47,6 +47,7 @@ function setControlsHidden(hidden) {
   if (hidden && desktopWallpaperKeepsPlayerConsoleVisible()) hidden = false;
   if (hidden && controlsRevealHoldUntil > performance.now()) hidden = false;
   if (hidden && (controlsHovering || miniQueueOpen)) hidden = false;
+  if (hidden && typeof songGeneEnabled !== 'undefined' && songGeneEnabled) hidden = false;
   bar.classList.toggle('soft-hidden', !!hidden && controlsAutoHide && bar.classList.contains('visible'));
   if (hidden && typeof closeLyricTimingPopover === 'function') closeLyricTimingPopover(true);
   bar.style.pointerEvents = '';

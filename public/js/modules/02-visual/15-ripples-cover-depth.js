@@ -533,6 +533,7 @@ function setControlCoverSrc(src) {
 
 function updateControlTrackInfo(song) {
   song = song || {};
+  if (typeof updateSongGeneTrack === 'function') updateSongGeneTrack(song);
   var title = document.getElementById('control-title');
   var artist = document.getElementById('control-artist');
   if (title) {

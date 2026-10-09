@@ -14,6 +14,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="js/preload-mode.js"></script>
   <link rel="stylesheet" href="css/index.css?v=20260716-we-continuity-vsync">
+  <link rel="stylesheet" href="css/song-gene.css?v=1">
 </head>
 
 <body>
@@ -1309,6 +1310,17 @@
     </svg>
     <button id="bottom-handle" type="button" aria-label="展开播放器控制台" title="播放器控制台"><span></span></button>
     <div id="bottom-bar">
+      <section id="song-gene-panel" class="song-gene-panel" hidden aria-labelledby="song-gene-heading" data-i18n-skip onclick="event.stopPropagation()">
+        <div class="song-gene-head">
+          <svg class="song-gene-logo" viewBox="0 0 40 48" fill="none" aria-hidden="true"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path class="gene-strand" d="M10 3C10 14 30 14 30 24S10 34 10 45"/><path class="gene-strand gene-strand-other" d="M30 3C30 14 10 14 10 24S30 34 30 45"/><path class="gene-rungs" d="M11 7h18M15 13h10M12 20h16M10 26h20M15 33h10M12 40h16"/></g></svg>
+          <div><h2 id="song-gene-heading">歌曲基因</h2><p id="song-gene-caption">风格相似度 · 非占比</p></div>
+          <button id="song-gene-close" type="button" class="ctrl-btn" onclick="toggleSongGene(false)" title="关闭歌曲基因分析" aria-label="关闭歌曲基因分析"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </div>
+        <div class="song-gene-track"><div id="song-gene-title"></div><div id="song-gene-artist"></div><div id="song-gene-album"></div></div>
+        <p id="song-gene-status" role="status" aria-live="polite"></p>
+        <ol id="song-gene-bars" class="song-gene-bars"></ol>
+        <button id="song-gene-retry" type="button" class="fx-mini-btn ghost" hidden onclick="analyzeSongGene()">重试分析</button>
+      </section>
       <div id="mini-queue-popover" class="mini-queue-popover" onclick="event.stopPropagation()">
         <div class="mini-queue-head">
           <div>
@@ -1373,6 +1385,7 @@
               <path d="M12 5v14" />
               <path d="M5 12h14" />
             </svg></button>
+          <button id="song-gene-btn" type="button" class="ctrl-btn" onclick="toggleSongGene()" title="歌曲基因分析" aria-label="歌曲基因分析" aria-controls="song-gene-panel" aria-expanded="false" aria-pressed="false"><svg width="20" height="22" viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 2c0 6 14 6 14 12S5 20 5 26M19 2c0 6-14 6-14 12s14 6 14 12M6 5h12M9 10h6M5 15h14M9 20h6M6 24h12"/></svg></button>
         </div>
         <div class="control-cluster transport">
           <button id="ai-play-mode-btn" class="ctrl-btn" onclick="toggleAiPlayMode()" title="AI 播放模式" aria-label="AI 播放模式" aria-pressed="false">AI</button>

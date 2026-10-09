@@ -7,6 +7,24 @@ var smartMuqAudioVectors = Object.create(null);
 var smartMuqAudioFingerprints = Object.create(null);
 var smartMuqTextVectors = Object.create(null);
 var smartMuqTextRequest = null;
+var smartMuqAudioRequests = Object.create(null);
+
+// Shared by AI playback and Song DNA: one decode/encode per song fingerprint.
+function smartMuqEnsureAudio(track) {
+  var key = smartTrackKey(track), fingerprint = smartMuqFingerprint(track);
+  if (smartMuqAudioVectors[key] && smartMuqAudioFingerprints[key] === fingerprint) return Promise.resolve(smartMuqAudioVectors[key]);
+  if (smartMuqAudioRequests[fingerprint]) return smartMuqAudioRequests[fingerprint];
+  smartMuqAudioRequests[fingerprint] = (async function () {
+    var bridge = smartFavoritesBridge();
+    var cached = await bridge.getMuqAudioCache([key]);
+    var entry = cached && cached.entries && cached.entries[key];
+    var vector = entry && entry.fingerprint === fingerprint ? entry.vector : await smartMuqEmbedTrack(track, fingerprint);
+    smartMuqAudioVectors[key] = vector;
+    smartMuqAudioFingerprints[key] = fingerprint;
+    return vector;
+  })().finally(function () { delete smartMuqAudioRequests[fingerprint]; });
+  return smartMuqAudioRequests[fingerprint];
+}
 
 function smartMuqFingerprint(track) {
   return ['muq-mulan-large:fp16-placeholder:24k:middle-third:10s:v6', smartTrackKey(track), smartTrackDurationSeconds(track), track.localUrl || ''].join('|');

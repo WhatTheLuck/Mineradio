@@ -5641,6 +5641,10 @@ function checkFirstLaunchDefaultsAndSplashGuard() {
 async function main() {
   console.log(`App root: ${appRoot}`);
   runNodeSyntaxCheck(jsCheckFiles());
+  logStep('Song DNA and shared MuQ cache regression');
+  const geneCheck = spawnSync(process.execPath, ['--test', 'tests/song-gene.test.js', 'tests/muq-analysis-pause.test.js', 'tests/muq-recommendation.test.js'], { cwd: appRoot, encoding: 'utf8' });
+  process.stdout.write(geneCheck.stdout || '');
+  if (geneCheck.status !== 0) fail(geneCheck.stderr || 'Song DNA regression failed');
   runPlaybackAudioGraphRegressionCheck();
   runPlaybackSourceFallbackTransactionCheck();
   runPlaybackSingleRepeatLoopRegressionCheck();

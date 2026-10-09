@@ -73,6 +73,8 @@
     'js/modules/05-playback/13-playback-start-audio.js',
     'js/modules/05-playback/14-player-controls.js',
     'js/modules/05-playback/14a-ai-playback.js',
+    'js/modules/05-playback/14b-song-gene-catalog.js',
+    'js/modules/05-playback/14c-song-gene.js',
     'js/modules/05-playback/15-control-glass-animations.js',
     'js/modules/05-playback/16-cuefield-automix-core.js',
     'js/modules/05-playback/17-cuefield-timeline-executor.js',

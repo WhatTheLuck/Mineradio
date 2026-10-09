@@ -340,12 +340,7 @@ async function performSmartFavoriteAnalysisBatch() {
     var status = await bridge.getMuqStatus();
     if (!status || !status.available) throw new Error('模型尚未打包');
     var key = smartTrackKey(batch[0]);
-    var cached = await bridge.getMuqAudioCache([key]);
-    var fingerprint = smartMuqFingerprint(batch[0]);
-    var existing = cached && cached.entries && cached.entries[key];
-    if (existing && existing.fingerprint === fingerprint) smartMuqAudioVectors[key] = existing.vector;
-    else smartMuqAudioVectors[key] = await smartMuqEmbedTrack(batch[0], fingerprint);
-    smartMuqAudioFingerprints[key] = fingerprint;
+    await smartMuqEnsureAudio(batch[0]);
     smartAiAnalysisStatus('MuQ 已编码 '+Object.keys(smartMuqAudioVectors).length+' 首 · 待处理 '+smartFavoritesAnalysisQueue.length+' 首 · 点击暂停');
     if (typeof renderSmartAiPlaylist === 'function') renderSmartAiPlaylist();
     if (typeof safeRenderQueuePanel === 'function') safeRenderQueuePanel('muq-audio-ready');

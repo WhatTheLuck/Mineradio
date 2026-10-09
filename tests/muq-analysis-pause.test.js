@@ -46,6 +46,11 @@ test('MuQ pause keeps completed embeddings and resumes the remaining queue', asy
     dedupeSmartFavoriteTracks: tracks => tracks,
   };
   vm.createContext(sandbox);
+  // Use the production shared cache/request helper, retaining the controlled encoder.
+  const fakeEncoder = sandbox.smartMuqEmbedTrack;
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/js/modules/05-playback/14a-ai-playback.js'), 'utf8'), sandbox);
+  sandbox.smartMuqEmbedTrack = fakeEncoder;
+  sandbox.smartMuqFingerprint = track => track.key + '-fp';
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/js/modules/05-playback/03b-smart-favorites-ui.js'), 'utf8'), sandbox);
   await Promise.resolve();
 

@@ -1017,6 +1017,7 @@ async function playQueueAt(idx, opts) {
     homeForcedOpen = false;
     if (!opts.preserveHomeState) homeSuppressed = false;
     currentIdx = idx;
+    if (typeof updateSongGeneTrack === 'function') updateSongGeneTrack(playQueue[idx]);
     trackSwitchToken++;
     markPlayPhase('cancel-previous-track');
     cancelBeatAnalysisTimer();

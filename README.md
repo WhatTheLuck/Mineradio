@@ -131,7 +131,7 @@ Faveradio 不是医疗器械，不测量脑活动、心率、血氧、压力激�
 
 - [打开 Faveradio 2.3.6 Release](https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.6)
 - Windows 安装包：`Mineradio-2.3.6-Setup.exe`
-- SHA-256：`1d42d59f675a290bbefe9879349a2c9923ac420455791af5c46887e20a3d52b6`。
+- SHA-256：`c5ce72bc784e311a865d7389e04929e30f5e7297b7d1a646f8bc5d52fcb70fe0`。
 - 内含 28 首本地 MP3，首次启动加入“本地音乐”歌单，可断网播放。
 
 安装步骤：

@@ -14,6 +14,7 @@
     "build:win:internal-beta": "electron-builder --config electron-builder.internal-beta.json --win nsis --publish never"
   },
   "build": {
+    "compression": "maximum",
     "appId": "com.mineradio.desktop",
     "productName": "Mineradio",
     "directories": {
@@ -58,7 +59,18 @@
     "extraResources": [
       {
         "from": "build/muq-placeholder-bundle",
-        "to": "muq-runtime"
+        "to": "muq-runtime",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/.cache/**",
+          "!**/*.log",
+          "!expanded/**",
+          "!muq-expanded*/**",
+          "!_internal/sklearn/datasets/tests/**",
+          "!_internal/torch/testing/_internal/distributed/rpc/examples/**",
+          "!_internal/torch/utils/benchmark/examples/**"
+        ]
       }
     ],
     "asar": false,
@@ -76,6 +88,7 @@
       ]
     },
     "nsis": {
+      "differentialPackage": false,
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": false,

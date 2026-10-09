@@ -8,7 +8,7 @@ Faveradio 是一款面向 Windows 的桌面音乐播放器。它既可以播放�
 
 它不是简单的“播放器加频谱”：歌曲、歌词、封面、节奏、收藏标签和视觉参数被组织在同一个交互系统里。你可以只把它当作本地播放器，也可以逐步开启平台歌单、AI 推荐、Wallpaper Engine 或 EmoMusic 等高级能力。
 
-> 项目对外名称现为 **Faveradio**。为兼容既有用户数据、更新链路和安装安全逻辑，当前 `2.3.5` 安装包文件名、进程名及部分内部字段仍沿用 `Mineradio`；这不会影响正常使用。
+> 项目对外名称现为 **Faveradio**。为兼容既有用户数据、更新链路和安装安全逻辑，当前 `2.3.6` 安装包文件名、进程名及部分内部字段仍沿用 `Mineradio`；这不会影响正常使用。
 
 ## 项目简介与社会价值
 
@@ -127,20 +127,20 @@ Faveradio 不是医疗器械，不测量脑活动、心率、血氧、压力激�
 
 ## 下载与安装
 
-当前正式版本：`2.3.5`
+当前正式版本：`2.3.6`
 
-- [打开 Faveradio 2.3.5 Release](https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.5)
-- Windows 安装包：`Mineradio-2.3.5-Setup.exe`
-- SHA-256：`29a3910da40fceb861c1b93d285adcc2560455ca8be1e2a1be8e8ecf00de1490`。
+- [打开 Faveradio 2.3.6 Release](https://github.com/WhatTheLuck/Mineradio/releases/tag/v2.3.6)
+- Windows 安装包：`Mineradio-2.3.6-Setup.exe`
+- SHA-256：`1d42d59f675a290bbefe9879349a2c9923ac420455791af5c46887e20a3d52b6`。
 - 内含 28 首本地 MP3，首次启动加入“本地音乐”歌单，可断网播放。
 
 安装步骤：
 
-1. 在 Release 页面下载 `Mineradio-2.3.5-Setup.exe`。
+1. 在 Release 页面下载 `Mineradio-2.3.6-Setup.exe`。
 2. 可选：在 PowerShell 中核对安装包哈希：
 
    ```powershell
-   Get-FileHash .\Mineradio-2.3.5-Setup.exe -Algorithm SHA256
+   Get-FileHash .\Mineradio-2.3.6-Setup.exe -Algorithm SHA256
    ```
 
 3. 运行安装包；默认安装到 `C:\Mineradio`，也可选择其它受支持的本地磁盘。

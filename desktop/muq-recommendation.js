@@ -22,8 +22,9 @@ function cosine(a, b) {
 }
 
 function rankTracks(tracks, audioVectors, tags, textVectors, history = [], limit = 50) {
-  const selected = (tags || []).filter(t => t.state === 'required' || t.state === 'preferred');
+  const selected = (tags || []).filter(t => t.state === 'required' || t.state === 'preferred' || t.state === 'excluded');
   const required = selected.filter(t => t.state === 'required');
+  const excluded = selected.filter(t => t.state === 'excluded');
   const rows = (tracks || []).map(track => {
     const vector = audioVectors[track.key];
     if (!vector) return null;
@@ -37,13 +38,14 @@ function rankTracks(tracks, audioVectors, tags, textVectors, history = [], limit
   }).filter(Boolean);
   // Relative threshold: a mandatory tag must be among its strongest matches in the current playlist.
   const floors = {};
-  for (const tag of required) {
+  for (const tag of required.concat(excluded)) {
     const values = rows.map(r => r.matches[tag.value]).sort((a, b) => b - a);
     floors[tag.value] = values[Math.min(values.length - 1, Math.max(0, Math.ceil(values.length * 0.35) - 1))];
   }
-  return rows.filter(row => required.every(tag => row.matches[tag.value] >= floors[tag.value]))
+  return rows.filter(row => required.every(tag => row.matches[tag.value] >= floors[tag.value]) &&
+      excluded.every(tag => row.matches[tag.value] <= 0 || row.matches[tag.value] < floors[tag.value]))
     .map(row => {
-      const affinity = selected.length ? selected.reduce((sum, tag) => sum + row.matches[tag.value] * (tag.state === 'required' ? 1.5 : 1), 0) / selected.reduce((sum, tag) => sum + (tag.state === 'required' ? 1.5 : 1), 0) : 0;
+      const affinity = selected.length ? selected.reduce((sum, tag) => sum + (tag.state === 'excluded' ? 1 - row.matches[tag.value] : row.matches[tag.value]) * (tag.state === 'required' ? 1.5 : 1), 0) / selected.reduce((sum, tag) => sum + (tag.state === 'required' ? 1.5 : 1), 0) : 0;
       const recentIndex = history.lastIndexOf(row.key);
       const repeatPenalty = recentIndex < 0 ? 0 : 0.08 / (history.length - recentIndex);
       return { key: row.key, score: affinity - repeatPenalty, matches: row.matches };

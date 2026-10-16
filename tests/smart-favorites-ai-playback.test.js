@@ -30,6 +30,11 @@ const excluded = core.scoreAiCandidate(
 );
 assert.strictEqual(eligible.eligible, true, 'required manual tag can satisfy hard filter');
 assert.strictEqual(excluded.eligible, false, 'missing required tag is a hard exclusion');
+assert.strictEqual(core.scoreAiCandidate({ genre: ['jazz'] }, { excluded: ['jazz'] }).eligible, false, 'excluded provider tags reject candidates');
+assert.strictEqual(core.scoreAiCandidate({ manualTags: ['study'] }, { excluded: ['study'] }).eligible, false, 'excluded manual tags reject candidates');
+const savedExclusion = core.sanitizeSmartFavoritesState({ tags: [{ label: '较吵', value: '较吵', state: 'excluded' }] });
+assert.strictEqual(savedExclusion.tags.find(tag => tag.value === '较吵').state, 'excluded', 'exclusion survives state reload');
+assert.ok(savedExclusion.tags.some(tag => tag.label === '歌曲'), 'existing users receive the new example tag');
 assert.strictEqual(core.scoreAiCandidate({ onlineIntentTags: ['study'] }, { required: ['study'] }).eligible, false, 'search intent alone cannot satisfy a required tag');
 assert.ok(eligible.score > 10, 'manual and provider matches receive positive weight');
 assert.strictEqual(core.scoreAiCandidate({ genre: ['jazz'], excludedTags: ['jazz'] }, { required: ['jazz'] }).eligible, false, 'a removed song tag no longer satisfies AI filters');

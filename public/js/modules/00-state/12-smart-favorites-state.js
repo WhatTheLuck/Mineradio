@@ -4,7 +4,7 @@ var SMART_FAVORITES_STORE_KEY = 'mineradio-smart-favorites-v1';
 var SMART_FAVORITES_ONLINE_CACHE_TTL = 30 * 60 * 1000;
 var SMART_FAVORITES_MIX_PRIVATE_RATIO = 0.7;
 var SMART_FAVORITES_TOP_N = 8;
-var SMART_FAVORITES_DEFAULT_TAGS = ['放松', '爵士', '学习', '开车', '浪漫', '工作', '运动', '夜晚'];
+var SMART_FAVORITES_DEFAULT_TAGS = ['放松', '爵士', '学习', '开车', '浪漫', '工作', '运动', '夜晚', '较吵', '歌曲'];
 var SMART_FAVORITES_TAG_ALIASES = {
   '放松': 'relaxed', '轻松': 'relaxed', 'relax': 'relaxed', 'relaxed': 'relaxed', 'chill': 'relaxed',
   '爵士': 'jazz', '爵士乐': 'jazz', 'jazz': 'jazz',
@@ -46,7 +46,7 @@ function normalizeAiTag(value) {
 }
 
 function normalizeAiTagState(value) {
-  return value === 'preferred' || value === 'required' ? value : 'neutral';
+  return value === 'preferred' || value === 'required' || value === 'excluded' ? value : 'neutral';
 }
 
 function uniqueAiTags(values) {
@@ -274,10 +274,11 @@ function smartTrackAllTags(track) {
 }
 
 function smartActiveTagContext() {
-  var context = { required: [], preferred: [] };
+  var context = { required: [], preferred: [], excluded: [] };
   (smartFavoritesState.tags || []).forEach(function (tag) {
     if (tag.state === 'required') context.required.push(tag.value);
     else if (tag.state === 'preferred') context.preferred.push(tag.value);
+    else if (tag.state === 'excluded') context.excluded.push(tag.value);
   });
   return context;
 }
@@ -308,6 +309,9 @@ function scoreAiCandidate(track, context) {
   });
   for (var i = 0; i < required.length; i++) {
     if (!smartTagMatch(required[i], sets, false)) return { eligible: false, score: -Infinity, matched: [] };
+  }
+  if (uniqueAiTags(context.excluded || []).some(function (tag) { return smartTagMatch(tag, sets, false); })) {
+    return { eligible: false, score: -Infinity, matched: [] };
   }
   var score = required.length * 8;
   var matched = [];

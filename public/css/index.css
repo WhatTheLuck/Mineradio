@@ -19072,9 +19072,18 @@ body.desktop-shell.desktop-wallpaper-mode.diy-mode #bottom-bar.stage-mode {
 }
 
 .smart-ai-tag[data-state="preferred"] i,
-.smart-ai-tag[data-state="required"] i {
+.smart-ai-tag[data-state="required"] i,
+.smart-ai-tag[data-state="excluded"] i {
   display: inline
 }
+
+.smart-ai-tag[data-state="excluded"] {
+  color: #ffd5d0;
+  border-color: rgba(255, 147, 135, .62);
+  background: rgba(189, 67, 53, .24)
+}
+
+.smart-ai-tag[data-state="excluded"] i { opacity: 1 }
 
 .smart-ai-tag.drop-ready {
   color: #061210;
